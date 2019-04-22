@@ -1,0 +1,8 @@
+.make.out
+.make.outb
+.make.outg
+.make.outf
+*.bin
+
+!output.bin
+

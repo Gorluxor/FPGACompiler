@@ -1,0 +1,7 @@
+#!/bin/bash
+
+make
+./micko < simple.mc
+./customasm -f binary -i instruction-set.txt -o output.bin output.asm 
+java -jar FPGAEmulator.jar
+

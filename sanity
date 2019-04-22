@@ -1,6 +1,0 @@
-#!/bin/bash
-
-make
-./micko < simple.mc
-./customasm -f binary -i instruction-set.txt -o maybe.bin output.asm 
-

@@ -10,8 +10,8 @@ int main(){
 	b = 5b;
 	a = a + hello();
 
-	if (a > 15){
-		a = a + 5;
+	if (a < 15){
+		a = a * 5;
 	}else {
 		a = a - 5;
 	}

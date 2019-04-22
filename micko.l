@@ -16,6 +16,9 @@
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }
 
+
+
+
 "("                  { return _LPAREN; }
 ")"                  { return _RPAREN; }
 "{"                  { return _LBRACKET; }
@@ -25,6 +28,9 @@
 
 "+"                  { yylval.i = ADD; return _AROP; }
 "-"                  { yylval.i = SUB; return _AROP; }
+"*"					 { yylval.i = MUL; return _AROP; }
+"/"					 { yylval.i = DIV; return _AROP; }
+
 
 "<"                  { yylval.i = LT; return _RELOP; }
 ">"                  { yylval.i = GT; return _RELOP; }
@@ -35,11 +41,21 @@
 
 [a-zA-Z][a-zA-Z0-9]* { yylval.s = strdup(yytext); 
                        return _ID; }
-[+-]?[0-9]{1,6}     { yylval.s = strdup(yytext); 
-                       return _INT_NUMBER;}
-[0-9]{1,3}[bB]		    { yylval.s = strdup(yytext); 
+[+-]?[0-9]{1,6}      { if (yytext[0] == '+'){
+							yylval.s = strdup(&(yytext[1]));  // escaping + sign
+						}else {
+							yylval.s = strdup(yytext); 
+						}
+                       return _INT_NUMBER;
+					}
+[+-]?[0-9]{1,3}[bB]	 { if (yytext[0] == '+'){
+							yylval.s = strdup(&(yytext[1])); // escaping + sign
+						} else{
+							yylval.s = strdup(yytext); 
+						}
                        yylval.s[yyleng-1] = 0;
-                       return _BYTE_NUMBER;}
+                       return _BYTE_NUMBER;
+					 }
 
 \/\/.*               { /* skip */ }
 .                    { printf("line %d: LEXICAL ERROR on char %c\n", yylineno, *yytext);}

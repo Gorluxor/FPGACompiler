@@ -1,5 +1,5 @@
-
-	Begin_INST:	J main
+Begin_INST: MOV sp, 0xffff
+		J main
 hello:
 			PUSH	r7
 			MOV 	r7,sp
@@ -11,8 +11,6 @@ hello:
 			POP 	r7
 			RET
 main:
-			PUSH	r7
-			MOV 	r7,sp
 			SUB		sp, 8
 .main_body:
 			MOV 	r0,15
@@ -27,10 +25,10 @@ main:
 .if0:
 			LD 	r0,[r7 - 2]
 			CMP 	r0,15
-			JSE 	.false0
+			JP 	.false0
 .true0:
 			LD 	r0,[r7 - 2]	;EXPRETION
-			ADD		r0,5
+			MUL		r0,5
 			ST 	[r7 - 2],r0		;ASSIGN
 			J 	.exit0
 .false0:

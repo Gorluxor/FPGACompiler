@@ -55,7 +55,8 @@
 program
   : {
 	  // CREATED TO JUMP TO MAIN
-	  code("\n\tBegin_INST:\tJ main");	
+		code("Begin_INST: MOV sp, 0xffff");		  
+		code("\n\t\tJ main");	
 	} 
 	function_list
       {  
@@ -83,8 +84,10 @@ function
           err("redefinition of function '%s'", $2);
 
         code("\n%s:", $2);
-		code("\n\t\t\tPUSH\tr7");  
-		code("\n\t\t\tMOV \tr7,sp");      
+		if ( strcmp($2, "main") != 0){
+			code("\n\t\t\tPUSH\tr7");  
+			code("\n\t\t\tMOV \tr7,sp");      
+		}
 		//code("\n\t\t\tPUSH\t%%14");
         //code("\n\t\t\tMOV \t%%15,%%14");
       }
