@@ -65,11 +65,11 @@ void print_symbol(int index) {
   if(index > -1) {
     if(get_kind(index) == VAR) // -n*4(%14)
       //code("-%d(%%14)", get_atr1(index) * 4);
-		code("[r7 - %d]", get_atr1(index) * 2);    
+		code("[r7 + %d]",  get_atr1(index) * 2 - 2);    
 	else 
       if(get_kind(index) == PAR) // m*4(%14)
         //code("%d(%%14)", 4 + get_atr1(index) *4);
-        code("[r7 + %d]", 2 + get_atr1(index) *2); // diff char types TODO
+        code("[r7 - %d]", 4 +  get_atr1(index) *2); // diff char types TODO
 	  else
         if(get_kind(index) == LIT)
           code("%s", get_name(index));
@@ -110,30 +110,39 @@ void gen_mov_code(int input_index, int output_index){
 	int t2 = get_kind(output_index);
 
 	if (t2 & REG && (t1 & (REG|LIT))){ // normal MOV
-			code("\n\t\t\tMOV \t");
+			code("\n\t\t\tMOV \t\t");
 			print_symbol(output_index);	  
 			code(",");
 			print_symbol(input_index);
 	}else if ((t2 & (VAR|PAR)) && (t1 & REG)){
-			code("\n\t\t\tST \t");
+			if (get_type(input_index) == BYTE)
+				code("\n\t\t\tST.b \t\t");
+			else			
+				code("\n\t\t\tST \t\t");
 			print_symbol(output_index);
 			code(",");
 			print_symbol(input_index);
 	}else if ((t2 & (VAR|PAR)) && (t1 & LIT)){ // Intermediate step because LIT can't be used in ST
 			
 			int temp_reg = take_reg();
-			code("\n\t\t\tMOV \t");			
+			code("\n\t\t\tMOV \t\t");			
 			print_symbol(temp_reg);
 			code(",");
 			print_symbol(input_index);
 			
-			code("\n\t\t\tST \t");
+			if (get_type(output_index) == BYTE)
+				code("\n\t\t\tST.b \t\t");
+			else
+				code("\n\t\t\tST \t\t");
 			print_symbol(output_index);
 			code(",");			
 			print_symbol(temp_reg);
 			free_reg(temp_reg);
 	}else if ((t1 & (VAR|PAR)) && (t2 & REG)){
-		  code("\n\t\t\tLD \t");
+			if (get_type(input_index) == BYTE)
+				code("\n\t\t\tLD.b \t\t");
+			else
+				code("\n\t\t\tLD \t\t");
 			print_symbol(output_index);
 			code(",");
 			print_symbol(input_index);

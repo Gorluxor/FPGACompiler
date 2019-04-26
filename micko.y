@@ -55,8 +55,12 @@
 program
   : {
 	  // CREATED TO JUMP TO MAIN
-		code("Begin_INST: MOV sp, 0xffff");		  
-		code("\n\t\tJ main");	
+		code("\tBegin_INST:");
+		code("\n\t\tMOV sp, 0xeeee");
+		code("\n\t\tPUSH\t 0x0");
+	  
+		code("\n\t\tCALL\t main"); // previous function doesnt exist
+		code("\n\t\tHALT");	
 	} 
 	function_list
       {  
@@ -84,10 +88,10 @@ function
           err("redefinition of function '%s'", $2);
 
         code("\n%s:", $2);
-		if ( strcmp($2, "main") != 0){
-			code("\n\t\t\tPUSH\tr7");  
+		//if ( strcmp($2, "main") != 0){
+			code("\n\t\t\tPUSH\tr7"); 
 			code("\n\t\t\tMOV \tr7,sp");      
-		}
+		//}
 		//code("\n\t\t\tPUSH\t%%14");
         //code("\n\t\t\tMOV \t%%15,%%14");
       }
@@ -104,11 +108,13 @@ function
 		code("\n\t\t\tMOV \tsp,r7");
 		code("\n\t\t\tPOP \tr7");
 		
-		if ( strcmp($2, "main") == 0){
-			code("\n\t\t\tHALT");
-		}else
-			code("\n\t\t\tRET");
-        //code("\n\t\t\tMOV \t%%14,%%15");
+		//if ( strcmp($2, "main") == 0){
+		//	code("\n\t\t\tHALT");
+		//}else
+		//	code("\n\t\t\tRET");
+        
+		code("\n\t\t\tRET");
+		//code("\n\t\t\tMOV \t%%14,%%15");
         //code("\n\t\t\tPOP \t%%14");
         //code("\n\t\t\tRET");
       }
@@ -135,7 +141,7 @@ body
   : _LBRACKET variable_list
       {
         if(var_num)
-			code("\n\t\t\tSUB\t\tsp, %d", 4*var_num);
+			code("\n\t\t\tADD\t\tsp, %d",2*var_num);
           //code("\n\t\t\tSUB\t%%15,$%d,%%15", 4*var_num);
         gen_sslab(get_name(fun_idx), "_body");
       }
@@ -284,7 +290,7 @@ function_call
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
         if($4 > 0)
           //code("\n\t\t\tADDS\t%%15,$%d,%%15", $4 * 4);
-			code("\n\t\t\tADD \tsp, %d", $4 * 2);
+			code("\n\t\t\tSUB \tsp, %d", $4 * 2);
         set_type(FUN_REG, get_type(fcall_idx));
         $$ = FUN_REG;
       }

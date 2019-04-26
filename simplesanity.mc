@@ -34,40 +34,40 @@ int main() {
   if (a < b)  //11 < 2
     a = a + 1;
   else
-    a = a + -2;
+    a = a + -2; // a = 9
 
   if (a + c == b + d - 4) //1 == 2
     a = a + 11;
   else
-    a = a + 2;
+    a = a + 2; // a = 11
 
-  if (u == w) {   //true
+  if (u == w) {   // true
     u = 2b + u;
-    a = a + f2();
+    a = a + f2(); // a = 13
   }
   else {
     w = 2b;
   }
 
-  if (a + c == b - d - -4) {  //2+3 == 2-4--4  false
+  if (a + c == b - d - -4) {  //13+3 == 2-4--4  false
     a = a + 7;
   }
   else
-    a = a + 4;
-  a = a + f8plus(25);
+    a = a + 4; // a = 17
+  a = a + f8plus(25); // a = a + 33 => 50
  
   if (a + (a-c) - d >= b + (b-a))    //50+(50-3)-4 >= 2+(2-50)  93 >= -46 true
     u = w-u;
   else
-    d = a+b-c;
+    d = a+b-c; 
 
   //if iskaz bez else dela
-  if (a > d)
-    a = a + d - 4;
+  if (a > d) // 50 > 4
+    a = a + d - 4; // a = 50 + 4 - 4; 
 
   if (a + c == b - +4)    //50+3 == 2-4  false
     a = a + 13;
 
-  return a;
+  return a; // return 50
 }
 
