@@ -1,6 +1,6 @@
 //RETURNS 108
 
-int hello(int a){
+int hello(int a, int b){
 	int q;
 	q = 5;
 	return q + a; // returns a + 5 = 8

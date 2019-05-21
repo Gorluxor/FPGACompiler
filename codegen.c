@@ -114,7 +114,7 @@ void gen_mov_code(int input_index, int output_index){
 			print_symbol(output_index);	  
 			code(",");
 			print_symbol(input_index);
-	}else if ((t2 & (VAR|PAR)) && (t1 & REG)){
+	}else if ((t2 & (VAR|PAR|GLB)) && (t1 & REG)){
 			if (get_type(input_index) == BYTE)
 				code("\n\t\t\tST.b \t\t");
 			else			
@@ -159,6 +159,7 @@ void gen_mov_code(int input_index, int output_index){
 
 
 }
+
 
 
 void gen_mov(int input_index, int output_index) {

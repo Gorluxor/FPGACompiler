@@ -1,0 +1,8 @@
+ 
+variable:
+    #res 2
+;mov r0, variable
+mov r1, 20
+;st [r0], r1
+;inc [variable]
+mov [variable], r1

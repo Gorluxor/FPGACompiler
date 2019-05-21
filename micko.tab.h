@@ -60,7 +60,14 @@ extern int yydebug;
     _SEMICOLON = 270,
     _AROP = 271,
     _RELOP = 272,
-    ONLY_IF = 273
+    _INC = 273,
+    _DEC = 274,
+    _DDOT = 275,
+    _QMARK = 276,
+    _COMMA = 277,
+    _DO = 278,
+    _WHILE = 279,
+    ONLY_IF = 280
   };
 #endif
 
@@ -69,12 +76,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 26 "micko.y" /* yacc.c:1909  */
+#line 28 "micko.y" /* yacc.c:1909  */
 
   int i;
   char *s;
 
-#line 78 "micko.tab.h" /* yacc.c:1909  */
+#line 85 "micko.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

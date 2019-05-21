@@ -16,8 +16,12 @@
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }
 
+"do"				 { return _DO; }
+"while"				 { return _WHILE; }
 
-
+"++"				 { return _INC; }
+"--"			     { return _DEC; }
+","					 { return _COMMA; }
 
 "("                  { return _LPAREN; }
 ")"                  { return _RPAREN; }
@@ -25,6 +29,9 @@
 "}"                  { return _RBRACKET; }
 ";"                  { return _SEMICOLON; }
 "="                  { return _ASSIGN; }
+"?"		    		 { return _QMARK; }
+":"		     		 { return _DDOT; } 
+
 
 "+"                  { yylval.i = ADD; return _AROP; }
 "-"                  { yylval.i = SUB; return _AROP; }

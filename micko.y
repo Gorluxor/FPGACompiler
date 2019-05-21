@@ -5,7 +5,7 @@
   #include "symtab.h"
   #include "codegen.h"
   #include <string.h>
-
+	#define YYDEBUG 0
   int yyparse(void);
   int yylex(void);
   int yyerror(char *s);
@@ -20,6 +20,8 @@
   int fun_idx = -1;
   int fcall_idx = -1;
   int lab_num = -1;
+  int typeOf = 0;
+	int global = 1;
   FILE *output;
 %}
 
@@ -41,19 +43,29 @@
 %token _RBRACKET
 %token _ASSIGN
 %token _SEMICOLON
-%token <i> _AROP
+%token <i> _AROP // TODO prioritet m/d?
 %token <i> _RELOP
+%token _INC
+%token _DEC
+%token _DDOT
+%token _QMARK
+%token _COMMA
+%token _DO
+%token _WHILE
 
-%type <i> type num_exp exp literal parameter
-%type <i> function_call argument rel_exp if_part
+%type <i> type num_exp exp literal parameter 
+%type <i> function_call argument rel_exp if_part 
+%type <i> conditional_value conditional_operator increment decrement dec_exp inc_exp
 
 %nonassoc ONLY_IF
 %nonassoc _ELSE
 
+%start program
+
 %%
 
 program
-  : {
+  : 	{
 	  // CREATED TO JUMP TO MAIN
 		code("\tBegin_INST:");
 		code("\n\t\tMOV sp, 0xeeee");
@@ -61,8 +73,9 @@ program
 	  
 		code("\n\t\tCALL\t main"); // previous function doesnt exist
 		code("\n\t\tHALT");	
-	} 
-	function_list
+   	} 
+		variable_list
+	  function_list
       {  
         int idx = lookup_symbol("main", FUN);
         if(idx == -1)
@@ -74,13 +87,14 @@ program
   ;
 
 function_list
-  : function
+  : function 
   | function_list function
   ;
 
 function
   : type _ID
       {
+				global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
           fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR);
@@ -88,12 +102,9 @@ function
           err("redefinition of function '%s'", $2);
 
         code("\n%s:", $2);
-		//if ( strcmp($2, "main") != 0){
-			code("\n\t\t\tPUSH\tr7"); 
-			code("\n\t\t\tMOV \tr7,sp");      
-		//}
-		//code("\n\t\t\tPUSH\t%%14");
-        //code("\n\t\t\tMOV \t%%15,%%14");
+
+				code("\n\t\t\tPUSH\tr7"); 
+				code("\n\t\t\tMOV \tr7,sp");      
       }
     _LPAREN parameter _RPAREN
       {
@@ -102,27 +113,18 @@ function
       }
     body
       {
-        clear_symbols(fun_idx + 1);
-		
-        gen_sslab($2,"_exit");
-		code("\n\t\t\tMOV \tsp,r7");
-		code("\n\t\t\tPOP \tr7");
-		
-		//if ( strcmp($2, "main") == 0){
-		//	code("\n\t\t\tHALT");
-		//}else
-		//	code("\n\t\t\tRET");
-        
-		code("\n\t\t\tRET");
-		//code("\n\t\t\tMOV \t%%14,%%15");
-        //code("\n\t\t\tPOP \t%%14");
-        //code("\n\t\t\tRET");
-      }
+				clear_symbols(fun_idx + 1);
+				gen_sslab($2,"_exit");
+				code("\n\t\t\tMOV \tsp,r7");
+				code("\n\t\t\tPOP \tr7");
+				code("\n\t\t\tRET");	
+			
+    	}
   ;
 
 type
   : _TYPE
-      {  $$ = $1; }
+      { typeOf = $1; $$ = $1; }
   ;
 
 parameter
@@ -141,8 +143,7 @@ body
   : _LBRACKET variable_list
       {
         if(var_num)
-			code("\n\t\t\tADD\t\tsp, %d",2*var_num);
-          //code("\n\t\t\tSUB\t%%15,$%d,%%15", 4*var_num);
+					code("\n\t\t\tADD\t\tsp, %d",2*var_num);
         gen_sslab(get_name(fun_idx), "_body");
       }
     statement_list _RBRACKET
@@ -153,15 +154,56 @@ variable_list
   | variable_list variable
   ;
 
-variable
-  : type _ID _SEMICOLON
-      {
-        if(lookup_symbol($2, VAR|PAR) == -1)
-           insert_symbol($2, VAR, $1, ++var_num, NO_ATR);
-        else 
-           err("redefinition of '%s'", $2);
-      }
+
+
+variable_part
+  : _ID 
+		{
+				if (global ==  0){
+					if(lookup_symbol($1, VAR|PAR) == -1)
+           insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR);
+      	  else 
+           err("redefinition of '%s'", $1);		
+				} else {
+						if (lookup_symbol($1, GLB) == -1)
+							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR);
+					else
+							err("Redefinition of global varibale '%s'", $1);
+						// Generate Directives for global variables
+						code("\n%s", $1);
+						code("\n\t\t\t #res 2"); // TODO type check??	
+				}
+				 
+		}
+  | variable_part _COMMA _ID
+		{
+				if (global == 0){
+							if(lookup_symbol($3, VAR|PAR) == -1)
+           insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR);
+         else 
+           err("redefinition of '%s'", $3);
+				} else {
+							if (lookup_symbol($3, GLB) == -1)
+								insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR);
+							else
+								err("Redefinition of global varibale '%s'", $3);
+			
+							// Generate Directives for global variables
+							code("\n%s", $3);
+							code("\n\t\t\t #res 2"); // TODO type check??		
+				}
+		
+		}
   ;
+
+
+
+variable
+  : type variable_part _SEMICOLON
+  ;
+
+
+
 
 statement_list
   : /* empty */
@@ -173,11 +215,87 @@ statement
   | assignment_statement
   | if_statement
   | return_statement
-  ;
+	| increment
+	| decrement
+	| do_loop  
+	| while_loop
+	;
+
+increment
+	: _INC _ID _SEMICOLON
+		{
+			int idx = lookup_symbol($2, (VAR|PAR|GLB));
+			if (idx == -1){
+				err("invalid type for increment '%s'", $2);
+			}
+			//TODO special case for GLB
+			if (get_type(idx) == INT){
+				code("\n\t\tINC \t");		
+			} else if (get_type(idx) == BYTE) {
+				code("\n\t\tINC.b\t");	
+			}			
+			print_symbol(idx);		
+
+		}
+	;
+decrement
+	: _DEC _ID _SEMICOLON
+		{
+			int idx = lookup_symbol($2, (VAR|PAR|GLB));
+			if (idx == -1){
+				err("invalid type for decrement '%s'", $2);
+			}
+			if (get_type(idx) == INT){
+				code("\n\t\tDEC \t");		
+			} else if (get_type(idx) == BYTE) {
+				code("\n\t\tDEC.b\t");	
+			}			
+			print_symbol(idx);	
+		}
+	;
+
+
 
 compound_statement
   : _LBRACKET statement_list _RBRACKET
   ;
+
+do_loop 
+  : _DO 
+		{ 
+		 $<i>$ = ++lab_num;
+		 gen_snlab("do", lab_num); 
+		 
+		}
+	  statement _WHILE _LPAREN rel_exp _RPAREN _SEMICOLON
+		{
+			code("\n\t\t\t%s\t.do%d",get_jump_stmt($6, FALSE),$<i>2);
+		}
+	;
+
+while_loop
+	: _WHILE 
+		{
+			$<i>$ = ++lab_num;
+			gen_snlab("while", lab_num);
+		}
+		_LPAREN rel_exp 
+		{
+			code("\n\t\t\t%s\t.exit%d",get_jump_stmt($4, TRUE),$<i>2);
+		}		
+		_RPAREN statement
+		{
+			code("\n\t\t\tJ .while%d",$<i>2);
+		  code("\n.exit%d:\t", $<i>2);
+		}
+	;
+
+/*
+for_loop
+	:
+	;
+*/
+
 
 assignment_statement
   : _ID _ASSIGN num_exp _SEMICOLON
@@ -205,54 +323,56 @@ num_exp
 		$$ = take_reg();
         set_type($$, t1);
 
-		//gen_mov($$,$1);
 		gen_mov_code($1,$$);
 
-		//code("\n\t\t\tMOV\t\t");
-		//print_symbol($$);
-		//code(",");
-		//print_symbol($1);        
 		code("\t;EXPRETION");
 		code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1));
 		       
 	
 		print_symbol($$);
-        code(",");
-        print_symbol($3); 
+    code(",");
+    print_symbol($3); 
 
 
-        if($3 >= 0 && $3 <= LAST_WORKING_REG)
-          free_reg($3);
-        if($1 >= 0 && $1 <= LAST_WORKING_REG)
-          free_reg($1);
-		
-		     
-
-
-        //if(get_type($1) != get_type($3))
-        //  err("invalid operands: arithmetic operation");
-        //int t1 = get_type($1);
-        //code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1));
-        //print_symbol($1);
-        //code(",");
-        //print_symbol($3);
-        //code(",");
-        //if($3 >= 0 && $3 <= LAST_WORKING_REG)
-        //  free_reg();
-        //if($1 >= 0 && $1 <= LAST_WORKING_REG)
-        //  free_reg();
-        //$$ = take_reg();
-        //print_symbol($$);
-        //set_type($$, t1);
+    if($3 >= 0 && $3 <= LAST_WORKING_REG)
+      free_reg($3);
+    if($1 >= 0 && $1 <= LAST_WORKING_REG)
+      free_reg($1);
       }
+	| conditional_operator  
   ;
 
+inc_exp
+	: _INC exp
+		{
+			if (get_type($2) == INT){ // no need for checking because EXP already did it
+				code("\n\t\tINC \t");		
+			} else if (get_type($2) == BYTE) {
+				code("\n\t\tINC.b\t");	
+			}			
+			print_symbol($2);
+			$$ = $2; 
+		}
+	;
+
+dec_exp
+	: _DEC exp
+		{
+			if (get_type($2) == INT){  // no need for checking because EXP already did it
+				code("\n\t\tINC \t");		
+			} else if (get_type($2) == BYTE) {
+				code("\n\t\tINC.b\t");	
+			}			
+			print_symbol($2);
+			$$ = $2; 
+		}
+	;
 exp
   : literal
 
   | _ID
       {
-        $$ = lookup_symbol($1, (VAR|PAR));
+        $$ = lookup_symbol($1, (VAR|PAR|GLB));
         if($$ == -1)
           err("'%s' undeclared", $1);
       }
@@ -266,6 +386,10 @@ exp
   
   | _LPAREN num_exp _RPAREN
       { $$ = $2; }
+	//| exp _INC 
+	//| exp _DEC
+	| inc_exp
+	| dec_exp
   ;
 
 literal
@@ -289,8 +413,7 @@ function_call
           err("wrong number of arguments");
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
         if($4 > 0)
-          //code("\n\t\t\tADDS\t%%15,$%d,%%15", $4 * 4);
-			code("\n\t\t\tSUB \tsp, %d", $4 * 2);
+					code("\n\t\t\tSUB \tsp, %d", $4 * 2);
         set_type(FUN_REG, get_type(fcall_idx));
         $$ = FUN_REG;
       }
@@ -319,6 +442,37 @@ if_statement
       { gen_snlab("exit", $1);}
   ;
 
+conditional_operator
+	: _LPAREN rel_exp _RPAREN _QMARK conditional_value _DDOT conditional_value
+		{
+			++lab_num;
+			gen_snlab("ter", lab_num);
+			if(get_type($5)!=get_type($7))
+				err("Conditional values not the same type");
+		  int reg=take_reg();
+			code("\n\t\t\t%s\t.false%d",get_jump_stmt($2, TRUE),lab_num);
+		
+      gen_snlab("true", lab_num);
+			gen_mov($5, reg);
+			code("\n\t\t\tJ \t.exit%d", lab_num);
+    	gen_snlab("false", lab_num);
+			gen_mov($7, reg);
+			gen_snlab("exit",lab_num);
+      $$ = reg;
+
+		}
+	;
+
+conditional_value
+	: literal {	$$ = $1;	}
+	| _ID 
+		{
+			$$ = lookup_symbol($1, (VAR|PAR|GLB));
+			if ($$ == -1)
+				err("'%s' undeclared", $1);
+		}
+	;
+
 if_part
   : _IF _LPAREN
       {
@@ -326,17 +480,16 @@ if_part
         gen_snlab("if", lab_num);
       }
     rel_exp
-      {
-        //code("\n\t\t\t%s\t@false%d", 
-       code("\n\t\t\t%s\t.false%d", 
-		  get_jump_stmt($4, TRUE),$<i>3);
+      { 
+				code("\n\t\t\t%s\t.false%d", 
+			  get_jump_stmt($4, TRUE),$<i>3);
         gen_snlab("true", $<i>3);
       }
     _RPAREN statement
       {
-        //code("\n\t\t\tJ \t@exit%d", $<i>3);
-		code("\n\t\t\tJ \t.exit%d", $<i>3);        
-		gen_snlab("false", $<i>3);
+  
+				code("\n\t\t\tJ \t.exit%d", $<i>3);        
+				gen_snlab("false", $<i>3);
         $$ = $<i>3;
       }
   ;
@@ -356,10 +509,9 @@ return_statement
       {
         if(get_type(fun_idx) != get_type($2))
           err("incompatible types in return");
-        gen_mov($2, FUN_REG);
-        //code("\n\t\t\tJ \t@%s_exit", get_name(fun_idx));        
-    	code("\n\t\t\tJ \t.%s_exit", get_name(fun_idx));          
-	}
+        gen_mov($2, FUN_REG);       
+    		code("\n\t\t\tJ \t.%s_exit", get_name(fun_idx));          
+			}
   ;
 
 %%
@@ -370,12 +522,19 @@ int yyerror(char *s) {
   return 0;
 }
 
+
 void warning(char *s) {
   fprintf(stderr, "\nline %d: WARNING: %s", yylineno, s);
   warning_count++;
 }
 
 int main() {
+	
+	#if YYDEBUG == 1
+	extern int yydebug;
+  yydebug = 1;
+  #endif
+
   int synerr;
   init_symtab();
   output = fopen("output.asm", "w+");
