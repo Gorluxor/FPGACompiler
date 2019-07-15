@@ -10,10 +10,11 @@
 
 %%
 
-"asm{" {BEGIN ASM;}
+"asm{" {BEGIN(ASM);}
 
-<ASM>.* { yylval.s = strdup(yytext); return _ASM;}
-<ASM>"}" { BEGIN INITIAL; }
+<ASM>[.]* { yylval.s = strdup(yytext); return _ASM;}
+
+<ASM>"}" { BEGIN(INITIAL); }
 
 
 [ \t\n]+             { /* skip */ }
@@ -23,7 +24,7 @@
 "if"                 { return _IF; }
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }
-
+"for"				 { return _FOR; }
 "do"				 { return _DO; }
 "while"				 { return _WHILE; }
 

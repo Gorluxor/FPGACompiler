@@ -40,6 +40,7 @@
 %token _LPAREN
 %token _RPAREN
 %token _LBRACKET
+%token _FOR
 %token _RBRACKET
 %token _ASSIGN
 %token _SEMICOLON
@@ -54,14 +55,12 @@
 %token _WHILE
 %token <s> _ASM
 
-%type <i> type num_exp exp literal parameter 
+%type <i> type num_exp exp literal parameter parameter_list
 %type <i> function_call argument rel_exp if_part 
 %type <i> conditional_value conditional_operator increment decrement 
 
 %right _INC
 %right _DEC
-
-%nonassoc ONLY_ASSIGN
 
 %nonassoc ONLY_IF
 %nonassoc _ELSE
@@ -112,7 +111,7 @@ function
 				code("\n\t\t\tPUSH\tr7"); 
 				code("\n\t\t\tMOV \tr7,sp");      
       }
-    _LPAREN parameter _RPAREN
+    _LPAREN parameter_list _RPAREN
       {
         set_atr1(fun_idx, $5);
         var_num = 0;
@@ -133,12 +132,16 @@ type
       { typeOf = $1; $$ = $1; }
   ;
 
+parameter_list
+	: { $$ = 0;}
+	| parameter_list _COMMA parameter { $$ = $1 + $3;}
+	;
 parameter
-  : /* empty */
-      { $$ = 0; }
+  //: /* empty */
+  //    { $$ = 0; }
 
-  | type _ID
-      {
+  : type _ID
+      { // TODO promeniti tabelu simbola za viseparametsku funkciju
         insert_symbol($2, PAR, $1, 1, NO_ATR);
         set_atr2(fun_idx, $1);
         $$ = 1;
@@ -218,7 +221,7 @@ statement_list
 
 statement
   : compound_statement
-	| ONLY_ASSIGN assignment_statement 
+	| assignment_statement 
 	| if_statement
 	| return_statement
 	| increment
@@ -226,7 +229,7 @@ statement
 	| do_loop  
 	| while_loop
 	| for_loop
-	| _ASM {char * string_code = $1;  code(string_code);}
+	| _ASM {char * string_code = $1;  code("%s",string_code);}
 	;
 
 increment
@@ -289,7 +292,7 @@ while_loop
 	;
 
 for_loop
-	: assignment_statement rel_exp _SEMICOLON left_part_assignment statement
+	: _FOR _LPAREN assignment_statement rel_exp _SEMICOLON left_part_assignment _RPAREN statement 
 	;
 
 
