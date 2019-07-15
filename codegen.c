@@ -198,3 +198,24 @@ char* get_jump_stmt(int jump_idx, bool opp) {
       return jumps[jump_idx];
 } 
 
+void gen_inc(int num, int idx){
+	//TODO special case for GLB
+	if (get_type(idx) == INT){
+		code("\n\t\tINC \t");		
+	} else if (get_type(idx) == BYTE) {
+		code("\n\t\tINC.b\t");	
+	}	
+	print_symbol(idx);	
+}
+
+
+void gen_dec(int num, int idx){
+	if (get_type(idx) == INT){
+		code("\n\t\tDEC \t");		
+	} else if (get_type(idx) == BYTE) {
+		code("\n\t\tDEC.b\t");	
+	} else if (get_type(idx) == INT_POINTER){
+		code("\n\t\tDEC \t");	//TODO pointer
+	}	
+	print_symbol(idx);	
+}

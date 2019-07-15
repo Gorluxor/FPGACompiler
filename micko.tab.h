@@ -67,7 +67,8 @@ extern int yydebug;
     _COMMA = 277,
     _DO = 278,
     _WHILE = 279,
-    ONLY_IF = 280
+    ONLY_ASSIGN = 280,
+    ONLY_IF = 281
   };
 #endif
 
@@ -81,7 +82,7 @@ union YYSTYPE
   int i;
   char *s;
 
-#line 85 "micko.tab.h" /* yacc.c:1909  */
+#line 86 "micko.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

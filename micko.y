@@ -55,7 +55,12 @@
 
 %type <i> type num_exp exp literal parameter 
 %type <i> function_call argument rel_exp if_part 
-%type <i> conditional_value conditional_operator increment decrement dec_exp inc_exp
+%type <i> conditional_value conditional_operator increment decrement 
+
+%right _INC
+%right _DEC
+
+%nonassoc ONLY_ASSIGN
 
 %nonassoc ONLY_IF
 %nonassoc _ELSE
@@ -212,45 +217,36 @@ statement_list
 
 statement
   : compound_statement
-  | assignment_statement
-  | if_statement
-  | return_statement
+	| ONLY_ASSIGN assignment_statement 
+	| if_statement
+	| return_statement
 	| increment
 	| decrement
 	| do_loop  
 	| while_loop
+	| for_loop
 	;
 
 increment
-	: _INC _ID _SEMICOLON
+	:  _ID _INC _SEMICOLON
 		{
-			int idx = lookup_symbol($2, (VAR|PAR|GLB));
+			int idx = lookup_symbol($1, (VAR|PAR|GLB));
 			if (idx == -1){
-				err("invalid type for increment '%s'", $2);
+				err("invalid type for increment '%s'", $1);
 			}
-			//TODO special case for GLB
-			if (get_type(idx) == INT){
-				code("\n\t\tINC \t");		
-			} else if (get_type(idx) == BYTE) {
-				code("\n\t\tINC.b\t");	
-			}			
-			print_symbol(idx);		
-
+			gen_inc(1,idx);
+			
 		}
 	;
 decrement
-	: _DEC _ID _SEMICOLON
+	: _ID _DEC _SEMICOLON
 		{
-			int idx = lookup_symbol($2, (VAR|PAR|GLB));
+			int idx = lookup_symbol($1, (VAR|PAR|GLB));
 			if (idx == -1){
-				err("invalid type for decrement '%s'", $2);
+				err("invalid type for decrement '%s'", $1);
 			}
-			if (get_type(idx) == INT){
-				code("\n\t\tDEC \t");		
-			} else if (get_type(idx) == BYTE) {
-				code("\n\t\tDEC.b\t");	
-			}			
-			print_symbol(idx);	
+			gen_dec(1,idx);
+		
 		}
 	;
 
@@ -290,26 +286,30 @@ while_loop
 		}
 	;
 
-/*
 for_loop
-	:
+	: assignment_statement rel_exp _SEMICOLON left_part_assignment statement
 	;
-*/
+
+
 
 
 assignment_statement
-  : _ID _ASSIGN num_exp _SEMICOLON
-      {
-        int idx = lookup_symbol($1, (VAR|PAR));
-        if(idx == -1)
-          err("invalid lvalue '%s' in assignment", $1);
-        else
-          if(get_type(idx) != get_type($3))
-            err("incompatible types in assignment");
-        gen_mov($3,idx);
-			code("\t\t;ASSIGN");
-      }
+  :  left_part_assignment _SEMICOLON
   ;
+
+left_part_assignment
+	: _ID _ASSIGN num_exp 
+		{
+			int idx = lookup_symbol($1, (VAR|PAR));
+      if(idx == -1)
+        err("invalid lvalue '%s' in assignment", $1);
+      else
+  		  if(get_type(idx) != get_type($3))
+            err("incompatible types in assignment");
+      gen_mov($3,idx);
+			code("\t\t;ASSIGN");
+		}
+	;
 
 num_exp
   : exp
@@ -342,31 +342,7 @@ num_exp
 	| conditional_operator  
   ;
 
-inc_exp
-	: _INC exp
-		{
-			if (get_type($2) == INT){ // no need for checking because EXP already did it
-				code("\n\t\tINC \t");		
-			} else if (get_type($2) == BYTE) {
-				code("\n\t\tINC.b\t");	
-			}			
-			print_symbol($2);
-			$$ = $2; 
-		}
-	;
 
-dec_exp
-	: _DEC exp
-		{
-			if (get_type($2) == INT){  // no need for checking because EXP already did it
-				code("\n\t\tINC \t");		
-			} else if (get_type($2) == BYTE) {
-				code("\n\t\tINC.b\t");	
-			}			
-			print_symbol($2);
-			$$ = $2; 
-		}
-	;
 exp
   : literal
 
@@ -381,15 +357,39 @@ exp
       {
         $$ = take_reg();
         gen_mov(FUN_REG, $$);
-		code("\t\t;FUN_REG");
+				code("\t\t;FUN_REG");
       }
   
   | _LPAREN num_exp _RPAREN
       { $$ = $2; }
-	//| exp _INC 
-	//| exp _DEC
-	| inc_exp
-	| dec_exp
+	| _ID _INC 
+		{ // INC
+			$$ = lookup_symbol($1, (VAR|PAR|GLB));
+			if ($$ == -1)
+			 err("'%s' undeclared", $1);
+
+			if (get_type($$) == INT){ 
+				code("\n\t\tINC \t");		
+			} else if (get_type($$) == BYTE) {
+				code("\n\t\tINC.b\t");	
+			}			
+			print_symbol($$);
+			 
+
+		}
+	| _ID _DEC 
+		{ // DEC
+		$$ = lookup_symbol($1, (VAR|PAR|GLB));
+		if ($$ == -1)
+			 err("'%s' undeclared", $1);
+
+		if (get_type($$) == INT){  
+			code("\n\t\tINC \t");		
+		} else if (get_type($$) == BYTE) {
+			code("\n\t\tINC.b\t");	
+		}			
+		print_symbol($$);
+		}
   ;
 
 literal

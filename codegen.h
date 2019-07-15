@@ -37,4 +37,8 @@ char* get_jump_stmt(int jump, bool opp);
 //vraca indeks u nizu stringova naredbi skokova
 int get_jump_idx(int relop, bool type);
 
+void gen_inc(int num, int operand);
+void gen_dec(int num, int operand);
+
+
 #endif
