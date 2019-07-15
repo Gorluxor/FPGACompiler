@@ -6,7 +6,15 @@
    extern YYSTYPE yylval;
 %}
 
+%x ASM
+
 %%
+
+"asm{" {BEGIN ASM;}
+
+<ASM>.* { yylval.s = strdup(yytext); return _ASM;}
+<ASM>"}" { BEGIN INITIAL; }
+
 
 [ \t\n]+             { /* skip */ }
 

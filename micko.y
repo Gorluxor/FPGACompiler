@@ -52,6 +52,7 @@
 %token _COMMA
 %token _DO
 %token _WHILE
+%token <s> _ASM
 
 %type <i> type num_exp exp literal parameter 
 %type <i> function_call argument rel_exp if_part 
@@ -225,6 +226,7 @@ statement
 	| do_loop  
 	| while_loop
 	| for_loop
+	| _ASM {char * string_code = $1;  code(string_code);}
 	;
 
 increment
