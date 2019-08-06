@@ -65,11 +65,11 @@ void print_symbol(int index) {
   if(index > -1) {
     if(get_kind(index) == VAR) // -n*4(%14)
       //code("-%d(%%14)", get_atr1(index) * 4);
-		code("[r7 + %d]",  get_atr1(index) * 2 - 2);    
+		code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
 	else 
       if(get_kind(index) == PAR) // m*4(%14)
         //code("%d(%%14)", 4 + get_atr1(index) *4);
-        code("[r7 - %d]", 4 +  get_atr1(index) *2); // diff char types TODO
+        code("[r7 - %d]", 4 +  get_atr1(index) *4); // diff char types TODO, changed to 4 from 2
 	  else
         if(get_kind(index) == LIT)
           code("%s", get_name(index));
@@ -214,7 +214,7 @@ void gen_dec(int num, int idx){
 		code("\n\t\tDEC \t");		
 	} else if (get_type(idx) == BYTE) {
 		code("\n\t\tDEC.b\t");	
-	} else if (get_type(idx) == INT_POINTER){
+	} else if (get_type(idx) == POINTER){
 		code("\n\t\tDEC \t");	//TODO pointer
 	}	
 	print_symbol(idx);	

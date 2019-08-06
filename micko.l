@@ -21,6 +21,8 @@
 
 "int"                { yylval.i = INT;  return _TYPE; }
 "char"          	 { yylval.i = BYTE; return _TYPE; }
+"int*"				 { yylval.i = POINTER; return _TYPE; }
+"char*"				 { yylval.i = POINTER; return _TYPE; }
 "if"                 { return _IF; }
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }

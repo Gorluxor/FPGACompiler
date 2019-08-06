@@ -62,6 +62,8 @@
 %right _INC
 %right _DEC
 
+%left _AROP // for pointer...
+
 %nonassoc ONLY_IF
 %nonassoc _ELSE
 
@@ -118,13 +120,13 @@ function
       }
     body
       {
-				clear_symbols(fun_idx + 1);
-				gen_sslab($2,"_exit");
-				code("\n\t\t\tMOV \tsp,r7");
-				code("\n\t\t\tPOP \tr7");
-				code("\n\t\t\tRET");	
+		clear_symbols(fun_idx + 1);
+		gen_sslab($2,"_exit");
+		code("\n\t\t\tMOV \tsp,r7");
+		code("\n\t\t\tPOP \tr7");
+		code("\n\t\t\tRET");	
 			
-    	}
+	  }
   ;
 
 type
@@ -152,7 +154,7 @@ body
   : _LBRACKET variable_list
       {
         if(var_num)
-					code("\n\t\t\tADD\t\tsp, %d",2*var_num);
+					code("\n\t\t\tADD\t\tsp, %d",4*var_num); // was 2 before push4
         gen_sslab(get_name(fun_idx), "_body");
       }
     statement_list _RBRACKET
@@ -168,38 +170,38 @@ variable_list
 variable_part
   : _ID 
 		{
-				if (global ==  0){
-					if(lookup_symbol($1, VAR|PAR) == -1)
-           insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR);
-      	  else 
-           err("redefinition of '%s'", $1);		
+			if (global ==  0){
+				if(lookup_symbol($1, VAR|PAR) == -1)
+           			insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR);
+				else 
+					err("redefinition of '%s'", $1);		
 				} else {
-						if (lookup_symbol($1, GLB) == -1)
-							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR);
+					if (lookup_symbol($1, GLB) == -1)
+						insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR);
 					else
-							err("Redefinition of global varibale '%s'", $1);
+						err("Redefinition of global varibale '%s'", $1);
 						// Generate Directives for global variables
-						code("\n%s", $1);
-						code("\n\t\t\t #res 2"); // TODO type check??	
+					code("\n%s", $1);
+					code("\n\t\t\t #res 2"); // TODO type check??	
 				}
 				 
 		}
   | variable_part _COMMA _ID
 		{
-				if (global == 0){
-							if(lookup_symbol($3, VAR|PAR) == -1)
-           insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR);
-         else 
-           err("redefinition of '%s'", $3);
-				} else {
-							if (lookup_symbol($3, GLB) == -1)
-								insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR);
-							else
-								err("Redefinition of global varibale '%s'", $3);
-			
-							// Generate Directives for global variables
-							code("\n%s", $3);
-							code("\n\t\t\t #res 2"); // TODO type check??		
+		if (global == 0){
+			if(lookup_symbol($3, VAR|PAR) == -1)
+        	   insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR);
+			else 
+				err("redefinition of '%s'", $3);
+		} else {
+				if (lookup_symbol($3, GLB) == -1)
+					insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR);
+				else
+					err("Redefinition of global varibale '%s'", $3);
+		
+					// Generate Directives for global variables
+					code("\n%s", $3);
+					code("\n\t\t\t #res 2"); // TODO type check??		
 				}
 		
 		}

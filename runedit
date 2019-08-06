@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gedit --new-window codegen.c micko.y micko.l defs.h output.asm simple.mc simple1.mc & 
+

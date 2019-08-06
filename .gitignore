@@ -2,7 +2,6 @@
 .make.outb
 .make.outg
 .make.outf
-runedit
 *.bin
 
 !output.bin
