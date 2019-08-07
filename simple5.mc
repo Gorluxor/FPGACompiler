@@ -4,6 +4,6 @@ int main() {
     int x;
     int y;
     x = 3;
-    y = ++ x + ++x;
+    y = x++ + x++;
     return x + y;
 }

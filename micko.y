@@ -5,7 +5,7 @@
   #include "symtab.h"
   #include "codegen.h"
   #include <string.h>
-	#define YYDEBUG 0
+	#define YYDEBUG 1
   int yyparse(void);
   int yylex(void);
   int yyerror(char *s);
@@ -21,6 +21,7 @@
   int fcall_idx = -1;
   int lab_num = -1;
   int typeOf = 0;
+  int pointerType = 0;
 	int global = 1;
   FILE *output;
 %}
@@ -30,7 +31,7 @@
   char *s;
 }
 
-%token <i> _TYPE
+%token <i> _TYPE 
 %token _IF
 %token _ELSE
 %token _RETURN
@@ -45,6 +46,7 @@
 %token _ASSIGN
 %token _SEMICOLON
 %token <i> _AROP // TODO prioritet m/d?
+%token _ASTERIKS
 %token <i> _RELOP
 %token _INC
 %token _DEC
@@ -55,8 +57,8 @@
 %token _WHILE
 %token <s> _ASM
 
-%type <i> type num_exp exp literal parameter parameter_list
-%type <i> function_call argument rel_exp if_part 
+%type <i> arop type num_exp exp literal parameter parameter_list
+%type <i> function_call argument argument_list rel_exp if_part 
 %type <i> conditional_value conditional_operator increment decrement 
 
 %right _INC
@@ -68,7 +70,7 @@
 %nonassoc _ELSE
 
 %start program
-
+//%error-verbose
 %%
 
 program
@@ -106,10 +108,10 @@ function_list
 function
   : type _ID
       {
-				global = 0; // its inside the function 
+		global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
-          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR);
+          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR, NO_ATR);
         else 
           err("redefinition of function '%s'", $2);
 
@@ -136,11 +138,22 @@ function
 
 type
   : _TYPE
-      { typeOf = $1; $$ = $1; }
+      { 
+		typeOf = $1;
+		pointerType = 0;
+		$$ = $1;
+	  }
+  | _TYPE _ASTERIKS 
+	{
+	    typeOf = POINTER;
+		pointerType = $1;
+		$$ = typeOf;
+	}
   ;
 
 parameter_list
 	: { $$ = 0;}
+	| parameter { $$ = $1; }
 	| parameter_list _COMMA parameter { $$ = $1 + $3;}
 	;
 parameter
@@ -149,7 +162,7 @@ parameter
 
   : type _ID
       { // TODO promeniti tabelu simbola za viseparametsku funkciju
-        insert_symbol($2, PAR, $1, 1, NO_ATR);
+        insert_symbol($2, PAR, $1, 1, NO_ATR, NO_ATR);
         set_atr2(fun_idx, $1);
         $$ = 1;
       }
@@ -177,12 +190,12 @@ variable_part
 		{
 			if (global ==  0){
 				if(lookup_symbol($1, VAR|PAR) == -1)
-           			insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR);
+           			insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
 				else 
 					err("redefinition of '%s'", $1);		
 				} else {
 					if (lookup_symbol($1, GLB) == -1)
-						insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR);
+						insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
 					else
 						err("Redefinition of global varibale '%s'", $1);
 						// Generate Directives for global variables
@@ -195,12 +208,12 @@ variable_part
 		{
 		if (global == 0){
 			if(lookup_symbol($3, VAR|PAR) == -1)
-        	   insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR);
+        	   insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
 			else 
 				err("redefinition of '%s'", $3);
 		} else {
 				if (lookup_symbol($3, GLB) == -1)
-					insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR);
+					insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
 				else
 					err("Redefinition of global varibale '%s'", $3);
 		
@@ -323,10 +336,14 @@ left_part_assignment
 		}
 	;
 
+arop
+  : _AROP { $$ = $1;}
+  | _ASTERIKS { $$ = MUL; }
+
 num_exp
   : exp
 
-  | num_exp _AROP exp
+  | num_exp arop exp
       {
 		if(get_type($1) != get_type($3))
           err("invalid operands: arithmetic operation");
@@ -353,6 +370,8 @@ num_exp
       }
 	| conditional_operator  
   ;
+
+
 
 
 exp
@@ -396,9 +415,9 @@ exp
 			 err("'%s' undeclared", $1);
 
 		if (get_type($$) == INT){  
-			code("\n\t\tINC \t");		
+			code("\n\t\tDEC \t");		
 		} else if (get_type($$) == BYTE) {
-			code("\n\t\tINC.b\t");	
+			code("\n\t\tDEC.b\t");	
 		}			
 		print_symbol($$);
 		}
@@ -412,6 +431,8 @@ literal
       { $$ = insert_literal($1, BYTE); }
   ;
 
+
+
 function_call
   : _ID 
       {
@@ -419,7 +440,7 @@ function_call
         if(fcall_idx == -1)
           err("'%s' is not a function", $1);
       }
-    _LPAREN argument _RPAREN
+    _LPAREN argument_list _RPAREN
       {
         if(get_atr1(fcall_idx) != $4)
           err("wrong number of arguments");
@@ -431,6 +452,10 @@ function_call
       }
   ;
 
+argument_list
+	: argument { $$ = $1;}
+	| argument_list _COMMA argument { $$ = $1 + $3;}
+	;
 argument
   : /* empty */
     { $$ = 0; }
@@ -552,6 +577,8 @@ int main() {
   output = fopen("output.asm", "w+");
 
   synerr = yyparse();
+
+  print_symtab();
 
   clear_symtab();
   fclose(output);

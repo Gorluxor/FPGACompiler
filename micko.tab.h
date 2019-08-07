@@ -34,7 +34,7 @@
 # define YY_YY_MICKO_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -60,16 +60,17 @@ extern int yydebug;
     _ASSIGN = 270,
     _SEMICOLON = 271,
     _AROP = 272,
-    _RELOP = 273,
-    _INC = 274,
-    _DEC = 275,
-    _DDOT = 276,
-    _QMARK = 277,
-    _COMMA = 278,
-    _DO = 279,
-    _WHILE = 280,
-    _ASM = 281,
-    ONLY_IF = 282
+    _ASTERIKS = 273,
+    _RELOP = 274,
+    _INC = 275,
+    _DEC = 276,
+    _DDOT = 277,
+    _QMARK = 278,
+    _COMMA = 279,
+    _DO = 280,
+    _WHILE = 281,
+    _ASM = 282,
+    ONLY_IF = 283
   };
 #endif
 
@@ -78,12 +79,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 28 "micko.y" /* yacc.c:1909  */
+#line 29 "micko.y" /* yacc.c:1909  */
 
   int i;
   char *s;
 
-#line 87 "micko.tab.h" /* yacc.c:1909  */
+#line 88 "micko.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

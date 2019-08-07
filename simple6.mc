@@ -9,7 +9,7 @@ int main(){
 
 	while (a > 0){
 	  sum = sum + 2;
-	  --a;
+	  a--;
 	}
 	return sum;
 }

@@ -17,8 +17,6 @@
 		}
 
 <ASM>^[^}]*  { 
-			//code("\t\tASM%d:%s", yytext);
-			
 			yylval.s = strdup(yytext); return _ASM;
 			}
 
@@ -29,8 +27,9 @@
 
 "int"                { yylval.i = INT;  return _TYPE; }
 "char"          	 { yylval.i = BYTE; return _TYPE; }
-"int*"				 { yylval.i = POINTER; return _TYPE; }
-"char*"				 { yylval.i = POINTER; return _TYPE; }
+"void"				 { yylval.i = VOID; return _TYPE; }
+
+
 "if"                 { return _IF; }
 "else"               { return _ELSE; }
 "return"             { return _RETURN; }
@@ -54,7 +53,7 @@
 
 "+"                  { yylval.i = ADD; return _AROP; }
 "-"                  { yylval.i = SUB; return _AROP; }
-"*"					 { yylval.i = MUL; return _AROP; }
+"*"					 { return _ASTERIKS; } //{ yylval.i = MUL; return _AROP; }
 "/"					 { yylval.i = DIV; return _AROP; }
 
 

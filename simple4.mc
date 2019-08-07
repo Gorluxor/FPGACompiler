@@ -10,7 +10,7 @@ int main(){
 	do{
 		do {
 		sum = sum + a;
-		--a;
+		a--;
 		} while (a > 5);
 		sum = sum + a;
 	}while(a > 0);
@@ -18,7 +18,7 @@ int main(){
 	b = 6;
 	do{
 		sum = sum - 5;
-		--b;
+		b--;
 	} while (b > 5);
 	return sum;
 }
