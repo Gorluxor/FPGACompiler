@@ -11,7 +11,6 @@
 #define FUN_REG                6 
 #define CHAR_BUFFER_LENGTH   128
 extern char char_buffer[CHAR_BUFFER_LENGTH];
-
 extern int out_lin;
 //pomocni makroi za ispis
 extern void warning(char *s);

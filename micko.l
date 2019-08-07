@@ -4,15 +4,23 @@
    #include "micko.tab.h"
    #include "defs.h"
    extern YYSTYPE yylval;
+
+// int asm_count = 0;
 %}
 
 %x ASM
 
 %%
 
-"asm{" {BEGIN(ASM);}
+"asm{" {
+			BEGIN(ASM); //freopen("output.bin", "a", stdout);
+		}
 
-<ASM>[.]* { yylval.s = strdup(yytext); return _ASM;}
+<ASM>^[^}]*  { 
+			//code("\t\tASM%d:%s", yytext);
+			
+			yylval.s = strdup(yytext); return _ASM;
+			}
 
 <ASM>"}" { BEGIN(INITIAL); }
 

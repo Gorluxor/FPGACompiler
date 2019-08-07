@@ -62,7 +62,7 @@
 %right _INC
 %right _DEC
 
-%left _AROP // for pointer...
+
 
 %nonassoc ONLY_IF
 %nonassoc _ELSE
@@ -93,9 +93,14 @@ program
       }
   ;
 
+asm
+  : _ASM {code("\t%s",$1);} 
+  ;
+
 function_list
   : function 
   | function_list function
+  | function_list asm
   ;
 
 function
@@ -231,7 +236,7 @@ statement
 	| do_loop  
 	| while_loop
 	| for_loop
-	| _ASM {char * string_code = $1;  code("%s",string_code);}
+	| asm 
 	;
 
 increment
