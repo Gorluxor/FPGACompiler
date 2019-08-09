@@ -55,6 +55,7 @@
 %token _COMMA
 %token _DO
 %token _WHILE
+%token _AMP
 %token <s> _ASM
 
 %type <i> arop type num_exp exp literal parameter parameter_list
@@ -189,32 +190,46 @@ variable_part
   : _ID 
 		{
 			if (global ==  0){
-				if(lookup_symbol($1, VAR|PAR) == -1)
-           			insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
-				else 
+				if(lookup_symbol($1, VAR|PAR) == -1){
+					if (typeOf == POINTER)
+					    insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+					else					
+						insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
+				}else 
 					err("redefinition of '%s'", $1);		
-				} else {
-					if (lookup_symbol($1, GLB) == -1)
-						insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+			} else {
+					if (lookup_symbol($1, GLB) == -1){
+						if (typeOf == POINTER)
+							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+						else 
+							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+					}
 					else
 						err("Redefinition of global varibale '%s'", $1);
+
 						// Generate Directives for global variables
 					code("\n%s", $1);
 					code("\n\t\t\t #res 2"); // TODO type check??	
-				}
+			}
 				 
 		}
   | variable_part _COMMA _ID
 		{
 		if (global == 0){
-			if(lookup_symbol($3, VAR|PAR) == -1)
-        	   insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
-			else 
+			if(lookup_symbol($3, VAR|PAR) == -1){
+				if (typeOf == POINTER)
+				    insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+				else					
+					insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);        	  
+			}else 
 				err("redefinition of '%s'", $3);
 		} else {
-				if (lookup_symbol($3, GLB) == -1)
-					insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
-				else
+				if (lookup_symbol($3, GLB) == -1){
+					if (typeOf == POINTER)
+						insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+					else 
+						insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+				}else
 					err("Redefinition of global varibale '%s'", $3);
 		
 					// Generate Directives for global variables
@@ -325,13 +340,16 @@ assignment_statement
 left_part_assignment
 	: _ID _ASSIGN num_exp 
 		{
-			int idx = lookup_symbol($1, (VAR|PAR));
-      if(idx == -1)
-        err("invalid lvalue '%s' in assignment", $1);
-      else
-  		  if(get_type(idx) != get_type($3))
-            err("incompatible types in assignment");
-      gen_mov($3,idx);
+		  int idx = lookup_symbol($1, (VAR|PAR|GLB));
+		  if(idx == -1)
+			err("invalid lvalue '%s' in assignment", $1);
+		  else{
+   			if(get_type(idx) != POINTER && get_type(idx) != get_type($3))
+				          		
+				err("incompatible types in assignment");
+		  }
+  		  	
+    	  gen_mov($3,idx);
 			code("\t\t;ASSIGN");
 		}
 	;
@@ -359,14 +377,14 @@ num_exp
 		       
 	
 		print_symbol($$);
-    code(",");
-    print_symbol($3); 
+		code(",");
+		print_symbol($3); 
 
 
-    if($3 >= 0 && $3 <= LAST_WORKING_REG)
-      free_reg($3);
-    if($1 >= 0 && $1 <= LAST_WORKING_REG)
-      free_reg($1);
+		if($3 >= 0 && $3 <= LAST_WORKING_REG)
+		  free_reg($3);
+		if($1 >= 0 && $1 <= LAST_WORKING_REG)
+		  free_reg($1);
       }
 	| conditional_operator  
   ;
@@ -399,10 +417,11 @@ exp
 			if ($$ == -1)
 			 err("'%s' undeclared", $1);
 
-			if (get_type($$) == INT){ 
-				code("\n\t\tINC \t");		
-			} else if (get_type($$) == BYTE) {
+			if (get_type($$) == BYTE) {
 				code("\n\t\tINC.b\t");	
+			} else {
+				//if (get_type($$) == INT){ for pointers etc 
+				code("\n\t\tINC \t");		
 			}			
 			print_symbol($$);
 			 
@@ -414,12 +433,56 @@ exp
 		if ($$ == -1)
 			 err("'%s' undeclared", $1);
 
-		if (get_type($$) == INT){  
-			code("\n\t\tDEC \t");		
-		} else if (get_type($$) == BYTE) {
+		if (get_type($$) == BYTE) {
 			code("\n\t\tDEC.b\t");	
+		}else {
+			//if (get_type($$) == INT){  for pointers etc 
+			code("\n\t\tDEC \t");		
 		}			
 		print_symbol($$);
+		}
+	| _ASTERIKS exp {
+			int idx = $2;
+			if (idx == -1)
+				err("Can't find Expression in symbol table");
+			if (get_type($2)!= POINTER)
+				err("Trying to dereference something that isn't a pointer");
+			if (get_pok($2) == 0)
+				err("Error while trying to find what the variable is pointing at");
+			
+			$$ = take_reg();
+			gen_mov(idx,$$);
+			set_type($$,get_type(get_pok(idx)));
+
+			if (get_type(get_pok(idx)) == BYTE){
+				code("\t\t\tST.b\t %d,[%d]", $$,$$);
+			} else {
+				code("\t\t\tST\t %d,[%d]", $$,$$); // for pointer as well
+			}	
+		}
+
+	| _AMP exp {
+			int idx = $2;
+			if (idx == -1){
+				err("Can't find Expression in symbol table");
+			}
+			
+			
+
+			$$ = take_reg();
+
+			if (get_type(idx) == BYTE) {
+				code("\t\t\tLD.b\t");
+				
+			} 
+			else {
+				code("\t\t\tLD\t");
+			}
+			print_symbol($$);
+			code(",");
+			code("[");
+			print_symbol(idx);
+			code("]");
 		}
   ;
 
@@ -486,16 +549,16 @@ conditional_operator
 			gen_snlab("ter", lab_num);
 			if(get_type($5)!=get_type($7))
 				err("Conditional values not the same type");
-		  int reg=take_reg();
+			int reg=take_reg();
 			code("\n\t\t\t%s\t.false%d",get_jump_stmt($2, TRUE),lab_num);
 		
-      gen_snlab("true", lab_num);
+			gen_snlab("true", lab_num);
 			gen_mov($5, reg);
 			code("\n\t\t\tJ \t.exit%d", lab_num);
-    	gen_snlab("false", lab_num);
+  	 	 	gen_snlab("false", lab_num);
 			gen_mov($7, reg);
 			gen_snlab("exit",lab_num);
-      $$ = reg;
+			$$ = reg;
 
 		}
 	;

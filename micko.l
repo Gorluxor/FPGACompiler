@@ -50,7 +50,7 @@
 "?"		    		 { return _QMARK; }
 ":"		     		 { return _DDOT; } 
 
-
+"&"					 { return _AMP; }
 "+"                  { yylval.i = ADD; return _AROP; }
 "-"                  { yylval.i = SUB; return _AROP; }
 "*"					 { return _ASTERIKS; } //{ yylval.i = MUL; return _AROP; }

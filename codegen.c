@@ -204,7 +204,9 @@ void gen_inc(int num, int idx){
 		code("\n\t\tINC \t");		
 	} else if (get_type(idx) == BYTE) {
 		code("\n\t\tINC.b\t");	
-	}	
+	}else {
+		code("\n\t\tINC \t");
+	}
 	print_symbol(idx);	
 }
 
