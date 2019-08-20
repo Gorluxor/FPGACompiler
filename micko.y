@@ -65,7 +65,7 @@
 %right _INC
 %right _DEC
 
-
+%left _ASTERIKS
 
 %nonassoc ONLY_IF
 %nonassoc _ELSE
@@ -112,7 +112,7 @@ function
 		global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
-          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR, NO_ATR);
+          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR, pointerType); // pointerType for fun
         else 
           err("redefinition of function '%s'", $2);
 
@@ -344,11 +344,14 @@ left_part_assignment
 		  if(idx == -1)
 			err("invalid lvalue '%s' in assignment", $1);
 		  else{
-   			if(get_type(idx) != POINTER && get_type(idx) != get_type($3))
-				          		
-				err("incompatible types in assignment");
+   			if(get_type(idx) != POINTER)
+				if (get_type($3) == POINTER && get_type(idx) == INT)
+					warn("Allocating Address into a integer variable!");
+				else				
+					if (get_type(idx) != get_type($3))
+					err("incompatible types in assignment, %d : %d", get_type(idx), get_type($3));
 		  }
-  		  	
+  		  
     	  gen_mov($3,idx);
 			code("\t\t;ASSIGN");
 		}
@@ -363,13 +366,19 @@ num_exp
 
   | num_exp arop exp
       {
-		if(get_type($1) != get_type($3))
-          err("invalid operands: arithmetic operation");
+		if (get_type($1) == POINTER || get_type($3) == POINTER){
+			if (get_type($1) == POINTER) 
+				set_type($1, INT);
+			if (get_type($3) == POINTER)
+				set_type($3, INT);			
+			//warn("aritmehic operations with address??");					
+		} else if(get_type($1) != get_type($3))
+      		err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));
         int t1 = get_type($1);
 		
 		$$ = take_reg();
         set_type($$, t1);
-
+		set_pok($$, get_pok($3)); // for pointer
 		gen_mov_code($1,$$);
 
 		code("\t;EXPRETION");
@@ -445,20 +454,27 @@ exp
 			int idx = $2;
 			if (idx == -1)
 				err("Can't find Expression in symbol table");
-			if (get_type($2)!= POINTER)
+			if (get_pok($2) == 0)
 				err("Trying to dereference something that isn't a pointer");
 			if (get_pok($2) == 0)
 				err("Error while trying to find what the variable is pointing at");
+			printf("Before move! %d",idx);
+			print_symtab();	
 			
 			$$ = take_reg();
+			
+			printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
 			gen_mov(idx,$$);
+			printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
 			set_type($$,get_type(get_pok(idx)));
-
 			if (get_type(get_pok(idx)) == BYTE){
-				code("\t\t\tST.b\t %d,[%d]", $$,$$);
+				code("\n\t\t\tLD.b\t r%d,[r%d]", $$,$$);
+				
 			} else {
-				code("\t\t\tST\t %d,[%d]", $$,$$); // for pointer as well
-			}	
+				code("\n\t\t\tLD\t r%d,[r%d]", $$,$$); // for pointer as well
+				
+			}
+			print_symtab();	
 		}
 
 	| _AMP exp {
@@ -466,23 +482,17 @@ exp
 			if (idx == -1){
 				err("Can't find Expression in symbol table");
 			}
-			
-			
-
-			$$ = take_reg();
-
-			if (get_type(idx) == BYTE) {
-				code("\t\t\tLD.b\t");
-				
-			} 
-			else {
-				code("\t\t\tLD\t");
+			if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
+				err("Referencing invalid type");
 			}
-			print_symbol($$);
-			code(",");
-			code("[");
-			print_symbol(idx);
-			code("]");
+			printf("\nIDX:%d",idx);
+			$$ = take_reg();
+			set_pok($$, idx);
+			set_type($$,POINTER);
+ 			print_symtab();
+			//printf("\n\n\t%d:%d\n\n",$$,idx);
+			print_symbol_address(idx, $$);
+			
 		}
   ;
 
@@ -597,8 +607,9 @@ if_part
 rel_exp
   : num_exp _RELOP num_exp
       {
-        if(get_type($1) != get_type($3))
-          err("invalid operands: relational operator");
+		if (get_type($1) != POINTER && get_type($3) != POINTER)
+	        if(get_type($1) != get_type($3))
+    	      err("invalid operands: relational operator");
         $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);
         gen_cmp($1, $3);
       }

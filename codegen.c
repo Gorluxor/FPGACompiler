@@ -65,17 +65,70 @@ void print_symbol(int index) {
   if(index > -1) {
     if(get_kind(index) == VAR) // -n*4(%14)
       //code("-%d(%%14)", get_atr1(index) * 4);
-		code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+		code("[r7 + %d]",  get_atr1(index) * 2 - 2); // Can't be 4 (as in 32bit)   
 	else 
       if(get_kind(index) == PAR) // m*4(%14)
         //code("%d(%%14)", 4 + get_atr1(index) *4);
-        code("[r7 - %d]", 4 +  get_atr1(index) *4); // diff char types TODO, changed to 4 from 2
+        code("[r7 - %d]", 4 +  get_atr1(index) *2); // diff char types TODO, changed to 4 from 2
 	  else
         if(get_kind(index) == LIT)
           code("%s", get_name(index));
         else //function, reg
           code("%s", get_name(index));
   }
+}
+// prvo load iz zadate varijable, onda store u reg koristeci adresu iz loadovanje adrese
+void print_symbol_address(int index, int reg){
+ if(index > -1) 
+  {
+	code("\n");
+    if(get_kind(index) == VAR){ // -n*4(%14)
+		int val = get_atr1(index) * 2 - 2;         
+		code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		        
+		//code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+	}else{ 
+      if(get_kind(index) == PAR)// m*4(%14)
+	  { 
+			int val = 4 + get_atr1(index) * 2;         
+			code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
+			code("\t\t\tADD\tr%d,%d",reg, val);		
+			//code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
+	  }else
+		{
+		    if(get_kind(index) == LIT)
+		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+		    else //function, reg
+		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+  		}
+	}
+  }
+}
+
+void print_symbol_value(int index, int reg){
+ if(index > -1) 
+  {
+    if(get_kind(index) == VAR){ // -n*4(%14)
+		int val = get_atr1(index) * 4 - 4;         
+		code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
+		code("\t\t\tADD\tr%d,%d",reg, val);
+		//code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+	}else{ 
+      if(get_kind(index) == PAR)// m*4(%14)
+	  { 
+			int val = 4 + get_atr1(index) * 4;         
+			code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
+			code("\t\t\tADD\tr%d,%d",reg, val);		
+			//code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
+	  }else
+		{
+		    if(get_kind(index) == LIT)
+		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+		    else //function, reg
+		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+  		}
+	}
+  }	
+
 }
 
 // OTHER
@@ -108,7 +161,7 @@ void gen_cmp(int op1_index, int op2_index) {
 void gen_mov_code(int input_index, int output_index){
 	int t1 = get_kind(input_index);
 	int t2 = get_kind(output_index);
-
+	set_pok(output_index, get_pok(input_index)); // for exp pointer
 	if (t2 & REG && (t1 & (REG|LIT))){ // normal MOV
 			code("\n\t\t\tMOV \t\t");
 			print_symbol(output_index);	  
@@ -153,9 +206,12 @@ void gen_mov_code(int input_index, int output_index){
 			print_symbol(input_index);
 			printf("\nT1:%d,T2:%d\n", t1,t2 );			
 			warn("Default mov generated");
-			
-
 	}
+}
+
+void gen_p_move(int input_index, int output_index){
+	
+
 
 
 }

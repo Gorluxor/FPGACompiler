@@ -1,10 +1,14 @@
+// returns 12
 int main(){
 	int a;
+	int c;
 	int* b;
-	a = 1;
-	a = a * 5;
+	a = 4;
+
 
 	b = &a;
-	return 0;
+	c = *b * 3;
+	
+	return c;
 
 }

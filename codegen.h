@@ -20,7 +20,7 @@ void gen_snlab(char *str, int num);
 // ispisuje simbol (u odgovarajucem obliku) 
 // koji se nalazi na datom indeksu u tabeli simbola
 void print_symbol(int index);
-
+void print_symbol_address(int index, int reg);
 // generise CMP naredbu, parametri su indeksi operanada u TS-a 
 void gen_cmp(int operand1_index, int operand2_index);
 
