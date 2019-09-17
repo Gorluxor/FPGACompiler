@@ -446,8 +446,6 @@ exp
 				code("\n\t\tINC \t");		
 			}			
 			print_symbol($$);
-			 
-
 		}
 	| _ID _DEC 
 		{ // DEC
