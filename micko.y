@@ -327,7 +327,20 @@ while_loop
 	;
 
 for_loop
-	: _FOR _LPAREN assignment_statement rel_exp _SEMICOLON left_part_assignment _RPAREN statement 
+	: _FOR _LPAREN assignment_statement 
+	 {
+	 	$<i>$ = ++lab_num;
+	 	gen_snlab("for",lab_num);		
+	 }
+	 	rel_exp _SEMICOLON left_part_assignment _RPAREN 
+	 {
+		code("\n\t\t\t%s\t.exit%d", get_jump_stmt($5, TRUE), $<i>4);
+	 }
+	 statement 
+	 {
+		code("\n\t\t\tj\t.for%d",$<i>4);
+		code("\n.exit%d:",$<i>4);
+	 }
 	;
 
 

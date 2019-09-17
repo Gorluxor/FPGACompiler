@@ -269,11 +269,11 @@ void gen_inc(int num, int idx){
 
 void gen_dec(int num, int idx){
 	if (get_type(idx) == INT){
-		code("\n\t\tDEC \t");		
+		code("\n\t\t\tDEC \t");		
 	} else if (get_type(idx) == BYTE) {
-		code("\n\t\tDEC.b\t");	
+		code("\n\t\t\tDEC.b\t");	
 	} else if (get_type(idx) == POINTER){
-		code("\n\t\tDEC \t");	//TODO pointer
+		code("\n\t\t\tDEC \t");	//TODO pointer
 	}	
 	print_symbol(idx);	
 }
