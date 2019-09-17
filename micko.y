@@ -5,7 +5,7 @@
   #include "symtab.h"
   #include "codegen.h"
   #include <string.h>
-	#define YYDEBUG 1
+  #define YYDEBUG 1
   int yyparse(void);
   int yylex(void);
   int yyerror(char *s);
@@ -22,7 +22,7 @@
   int lab_num = -1;
   int typeOf = 0;
   int pointerType = 0;
-	int global = 1;
+  int global = 1;
   FILE *output;
 %}
 
@@ -45,7 +45,7 @@
 %token _RBRACKET
 %token _ASSIGN
 %token _SEMICOLON
-%token <i> _AROP // TODO prioritet m/d?
+%token <i> _AROP 
 %token _ASTERIKS
 %token <i> _RELOP
 %token _INC
@@ -75,24 +75,24 @@
 %%
 
 program
-  : 	{
-	  // CREATED TO JUMP TO MAIN
-		code("\tBegin_INST:");
-		code("\n\t\tMOV sp, 0xeeee");
-		code("\n\t\tPUSH\t 0x0");
-	  
-		code("\n\t\tCALL\t main"); // previous function doesnt exist
-		code("\n\t\tHALT");	
-   	} 
-		variable_list
-	  function_list
-      {  
-        int idx = lookup_symbol("main", FUN);
-        if(idx == -1)
-          err("undefined reference to 'main'");
-        else 
-          if(get_type(idx) != INT)
-            warn("return type of 'main' is not int");
+  : 	
+  {
+    // CREATED TO JUMP TO MAIN
+    code("\tBegin_INST:");
+    code("\n\t\tMOV sp, 0xeeee");
+    code("\n\t\tPUSH\t 0x0");
+
+    code("\n\t\tCALL\t main"); // previous function doesnt exist
+    code("\n\t\tHALT");	
+  } 
+  variable_list function_list
+  {  
+    int idx = lookup_symbol("main", FUN);
+    if(idx == -1)
+      err("undefined reference to 'main'");
+    else 
+      if(get_type(idx) != INT)
+        warn("return type of 'main' is not int");
       }
   ;
 
@@ -109,7 +109,7 @@ function_list
 function
   : type _ID
       {
-		global = 0; // its inside the function 
+	global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
           fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR, pointerType); // pointerType for fun
@@ -118,8 +118,8 @@ function
 
         code("\n%s:", $2);
 
-				code("\n\t\t\tPUSH\tr7"); 
-				code("\n\t\t\tMOV \tr7,sp");      
+	code("\n\t\t\tPUSH\tr7"); 
+	code("\n\t\t\tMOV \tr7,sp");      
       }
     _LPAREN parameter_list _RPAREN
       {
@@ -128,27 +128,26 @@ function
       }
     body
       {
-		clear_symbols(fun_idx + 1);
-		gen_sslab($2,"_exit");
-		code("\n\t\t\tMOV \tsp,r7");
-		code("\n\t\t\tPOP \tr7");
-		code("\n\t\t\tRET");	
-			
-	  }
+	clear_symbols(fun_idx + 1);
+	gen_sslab($2,"_exit");
+	code("\n\t\t\tMOV \tsp,r7");
+	code("\n\t\t\tPOP \tr7");
+	code("\n\t\t\tRET");			
+      }
   ;
 
 type
   : _TYPE
-      { 
-		typeOf = $1;
-		pointerType = 0;
-		$$ = $1;
-	  }
+        { 
+          typeOf = $1;
+	  pointerType = 0;
+	  $$ = $1;
+        }
   | _TYPE _ASTERIKS 
 	{
-	    typeOf = POINTER;
-		pointerType = $1;
-		$$ = typeOf;
+	  typeOf = POINTER;
+	  pointerType = $1;
+	  $$ = typeOf;
 	}
   ;
 
@@ -173,7 +172,7 @@ body
   : _LBRACKET variable_list
       {
         if(var_num)
-					code("\n\t\t\tADD\t\tsp, %d",4*var_num); // was 2 before push4
+	  code("\n\t\t\tADD\t\tsp, %d",4*var_num); // was 2 before push4
         gen_sslab(get_name(fun_idx), "_body");
       }
     statement_list _RBRACKET
@@ -188,56 +187,55 @@ variable_list
 
 variable_part
   : _ID 
-		{
-			if (global ==  0){
-				if(lookup_symbol($1, VAR|PAR) == -1){
-					if (typeOf == POINTER)
-					    insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, pointerType);
-					else					
-						insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
-				}else 
-					err("redefinition of '%s'", $1);		
-			} else {
-					if (lookup_symbol($1, GLB) == -1){
-						if (typeOf == POINTER)
-							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
-						else 
-							insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
-					}
-					else
-						err("Redefinition of global varibale '%s'", $1);
-
-						// Generate Directives for global variables
-					code("\n%s", $1);
-					code("\n\t\t\t #res 2"); // TODO type check??	
-			}
+        {
+          if (global ==  0){
+	    if(lookup_symbol($1, VAR|PAR) == -1){
+	      if (typeOf == POINTER)
+		insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+	      else					
+		insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
+	    }else 
+		err("redefinition of '%s'", $1);		
+          } else {
+	    if (lookup_symbol($1, GLB) == -1){
+		if (typeOf == POINTER)
+		  insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+		else 
+		  insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+	    }
+		else
+		  err("Redefinition of global varibale '%s'", $1);
+        	// Generate Directives for global variables
+	    code("\n%s", $1);
+	    code("\n\t\t\t #res 2"); // TODO type check??	
+       	  }
 				 
-		}
+	}
   | variable_part _COMMA _ID
-		{
-		if (global == 0){
-			if(lookup_symbol($3, VAR|PAR) == -1){
-				if (typeOf == POINTER)
-				    insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, pointerType);
-				else					
-					insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);        	  
-			}else 
-				err("redefinition of '%s'", $3);
+	{
+	  if (global == 0){
+	    if(lookup_symbol($3, VAR|PAR) == -1){
+		if (typeOf == POINTER)
+		  insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+		else					
+		  insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);        	  
+		}else 
+		  err("redefinition of '%s'", $3);
 		} else {
-				if (lookup_symbol($3, GLB) == -1){
-					if (typeOf == POINTER)
-						insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
-					else 
-						insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
-				}else
-					err("Redefinition of global varibale '%s'", $3);
+		  if (lookup_symbol($3, GLB) == -1){
+		    if (typeOf == POINTER)
+		      insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+		    else 
+		      insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+		  }else
+		      err("Redefinition of global varibale '%s'", $3);
 		
-					// Generate Directives for global variables
-					code("\n%s", $3);
-					code("\n\t\t\t #res 2"); // TODO type check??		
-				}
+	     // Generate Directives for global variables
+	     code("\n%s", $3);
+	     code("\n\t\t\t #res 2"); // TODO type check??		
+          }
 		
-		}
+	}
   ;
 
 
@@ -269,25 +267,23 @@ statement
 
 increment
 	:  _ID _INC _SEMICOLON
-		{
-			int idx = lookup_symbol($1, (VAR|PAR|GLB));
-			if (idx == -1){
-				err("invalid type for increment '%s'", $1);
-			}
-			gen_inc(1,idx);
-			
-		}
+	{
+	  int idx = lookup_symbol($1, (VAR|PAR|GLB));
+	  if (idx == -1){
+	    err("invalid type for increment '%s'", $1);
+          }
+	  gen_inc(1,idx);		
+	}
 	;
 decrement
 	: _ID _DEC _SEMICOLON
-		{
-			int idx = lookup_symbol($1, (VAR|PAR|GLB));
-			if (idx == -1){
-				err("invalid type for decrement '%s'", $1);
-			}
-			gen_dec(1,idx);
-		
-		}
+	{
+	  int idx = lookup_symbol($1, (VAR|PAR|GLB));
+          if (idx == -1){
+            err("invalid type for decrement '%s'", $1);
+          }
+	  gen_dec(1,idx);	
+	}
 	;
 
 
@@ -298,52 +294,49 @@ compound_statement
 
 do_loop 
   : _DO 
-		{ 
-		 $<i>$ = ++lab_num;
-		 gen_snlab("do", lab_num); 
-		 
-		}
-	  statement _WHILE _LPAREN rel_exp _RPAREN _SEMICOLON
-		{
-			code("\n\t\t\t%s\t.do%d",get_jump_stmt($6, FALSE),$<i>2);
-		}
+        { 
+	  $<i>$ = ++lab_num;
+	  gen_snlab("do", lab_num); 	 
+	}
+	statement _WHILE _LPAREN rel_exp _RPAREN _SEMICOLON
+	{
+	  code("\n\t\t\t%s\t.do%d",get_jump_stmt($6, FALSE),$<i>2);
+	}
 	;
 
 while_loop
 	: _WHILE 
-		{
-			$<i>$ = ++lab_num;
-			gen_snlab("while", lab_num);
-		}
-		_LPAREN rel_exp 
-		{
-			code("\n\t\t\t%s\t.exit%d",get_jump_stmt($4, TRUE),$<i>2);
-		}		
-		_RPAREN statement
-		{
-			code("\n\t\t\tJ .while%d",$<i>2);
-		  code("\n.exit%d:\t", $<i>2);
-		}
+	{
+	  $<i>$ = ++lab_num;
+	  gen_snlab("while", lab_num);
+	}
+	_LPAREN rel_exp 
+	{
+	  code("\n\t\t\t%s\t.exit%d",get_jump_stmt($4, TRUE),$<i>2);
+	}		
+	_RPAREN statement
+	{
+	  code("\n\t\t\tJ .while%d",$<i>2);
+	  code("\n.exit%d:\t", $<i>2);
+	}
 	;
 
 for_loop
 	: _FOR _LPAREN assignment_statement 
 	 {
-	 	$<i>$ = ++lab_num;
-	 	gen_snlab("for",lab_num);		
+	   $<i>$ = ++lab_num;
+	   gen_snlab("for",lab_num);		
 	 }
-	 	rel_exp _SEMICOLON left_part_assignment _RPAREN 
+	 rel_exp _SEMICOLON left_part_assignment _RPAREN 
 	 {
-		code("\n\t\t\t%s\t.exit%d", get_jump_stmt($5, TRUE), $<i>4);
+           code("\n\t\t\t%s\t.exit%d", get_jump_stmt($5, TRUE), $<i>4);
 	 }
 	 statement 
 	 {
-		code("\n\t\t\tj\t.for%d",$<i>4);
-		code("\n.exit%d:",$<i>4);
+	   code("\n\t\t\tj\t.for%d",$<i>4);
+	   code("\n.exit%d:",$<i>4);
 	 }
 	;
-
-
 
 
 assignment_statement
@@ -352,22 +345,22 @@ assignment_statement
 
 left_part_assignment
 	: _ID _ASSIGN num_exp 
-		{
-		  int idx = lookup_symbol($1, (VAR|PAR|GLB));
-		  if(idx == -1)
-			err("invalid lvalue '%s' in assignment", $1);
-		  else{
-   			if(get_type(idx) != POINTER)
-				if (get_type($3) == POINTER && get_type(idx) == INT)
-					warn("Allocating Address into a integer variable!");
-				else				
-					if (get_type(idx) != get_type($3))
-					err("incompatible types in assignment, %d : %d", get_type(idx), get_type($3));
-		  }
-  		  
+	{
+	  int idx = lookup_symbol($1, (VAR|PAR|GLB));
+	  if(idx == -1)
+		err("invalid lvalue '%s' in assignment", $1);
+	  else
+          {
+	    if (get_type(idx) != POINTER)
+	      if (get_type($3) == POINTER && get_type(idx) == INT)
+	        warn("Allocating Address into a integer variable!");
+	    else				
+	      if (get_type(idx) != get_type($3))
+	        err("incompatible types in assignment, %d : %d", get_type(idx), get_type($3));
+	  }
     	  gen_mov($3,idx);
-			code("\t\t;ASSIGN");
-		}
+	  code("\t\t;ASSIGN");
+	}
 	;
 
 arop
@@ -378,37 +371,37 @@ num_exp
   : exp
 
   | num_exp arop exp
-      {
-		if (get_type($1) == POINTER || get_type($3) == POINTER){
-			if (get_type($1) == POINTER) 
-				set_type($1, INT);
-			if (get_type($3) == POINTER)
-				set_type($3, INT);			
-			//warn("aritmehic operations with address??");					
-		} else if(get_type($1) != get_type($3))
-      		err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));
+  {
+    if (get_type($1) == POINTER || get_type($3) == POINTER){
+      if (get_type($1) == POINTER) 
+	set_type($1, INT);
+      if (get_type($3) == POINTER)
+	set_type($3, INT);			
+      //warn("aritmehic operations with address??");					
+      } else if(get_type($1) != get_type($3))
+      	  err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));
         int t1 = get_type($1);
-		
-		$$ = take_reg();
+	
+	$$ = take_reg();
         set_type($$, t1);
-		set_pok($$, get_pok($3)); // for pointer
-		gen_mov_code($1,$$);
+	set_pok($$, get_pok($3)); // for pointer
+	gen_mov_code($1,$$);
 
-		code("\t;EXPRETION");
-		code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1));
+	code("\t;EXPRETION");
+	code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1));
 		       
 	
-		print_symbol($$);
-		code(",");
-		print_symbol($3); 
+	print_symbol($$);
+	code(",");
+	print_symbol($3); 
 
 
-		if($3 >= 0 && $3 <= LAST_WORKING_REG)
-		  free_reg($3);
-		if($1 >= 0 && $1 <= LAST_WORKING_REG)
-		  free_reg($1);
+	if($3 >= 0 && $3 <= LAST_WORKING_REG)
+	  free_reg($3);
+	if($1 >= 0 && $1 <= LAST_WORKING_REG)
+	  free_reg($1);
       }
-	| conditional_operator  
+  | conditional_operator  
   ;
 
 
@@ -425,86 +418,87 @@ exp
       }
 
   | function_call
-      {
-        $$ = take_reg();
-        gen_mov(FUN_REG, $$);
-				code("\t\t;FUN_REG");
-      }
+     {
+       $$ = take_reg();
+       gen_mov(FUN_REG, $$);
+       code("\t\t;FUN_REG");
+     }
   
   | _LPAREN num_exp _RPAREN
-      { $$ = $2; }
-	| _ID _INC 
-		{ // INC
-			$$ = lookup_symbol($1, (VAR|PAR|GLB));
-			if ($$ == -1)
-			 err("'%s' undeclared", $1);
+     { $$ = $2; }
+  | _ID _INC 
+     { // INC
+	$$ = lookup_symbol($1, (VAR|PAR|GLB));
+	if ($$ == -1)
+	  err("'%s' undeclared", $1);
 
-			if (get_type($$) == BYTE) {
-				code("\n\t\tINC.b\t");	
-			} else {
-				//if (get_type($$) == INT){ for pointers etc 
-				code("\n\t\tINC \t");		
-			}			
-			print_symbol($$);
-		}
+	if (get_type($$) == BYTE) {
+  	  code("\n\t\tINC.b\t");	
+	} else {
+	//if (get_type($$) == INT){ for pointers etc 
+	  code("\n\t\tINC \t");		
+	}			
+	print_symbol($$);
+	}
 	| _ID _DEC 
-		{ // DEC
-		$$ = lookup_symbol($1, (VAR|PAR|GLB));
-		if ($$ == -1)
-			 err("'%s' undeclared", $1);
+	{ // DEC
+	  $$ = lookup_symbol($1, (VAR|PAR|GLB));
+	  if ($$ == -1)
+	    err("'%s' undeclared", $1);
 
-		if (get_type($$) == BYTE) {
-			code("\n\t\tDEC.b\t");	
-		}else {
-			//if (get_type($$) == INT){  for pointers etc 
-			code("\n\t\tDEC \t");		
-		}			
-		print_symbol($$);
-		}
-	| _ASTERIKS exp {
-			int idx = $2;
-			if (idx == -1)
-				err("Can't find Expression in symbol table");
-			if (get_pok($2) == 0)
-				err("Trying to dereference something that isn't a pointer");
-			if (get_pok($2) == 0)
-				err("Error while trying to find what the variable is pointing at");
-			printf("Before move! %d",idx);
-			print_symtab();	
-			
-			$$ = take_reg();
-			
-			printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
-			gen_mov(idx,$$);
-			printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
-			set_type($$,get_type(get_pok(idx)));
-			if (get_type(get_pok(idx)) == BYTE){
-				code("\n\t\t\tLD.b\t r%d,[r%d]", $$,$$);
-				
-			} else {
-				code("\n\t\t\tLD\t r%d,[r%d]", $$,$$); // for pointer as well
-				
-			}
-			print_symtab();	
-		}
+	  if (get_type($$) == BYTE) {
+	    code("\n\t\tDEC.b\t");	
+	  }else {
+	  //if (get_type($$) == INT){  for pointers etc 
+	    code("\n\t\tDEC \t");		
+	  }			
+	  print_symbol($$);
+	}
+	| _ASTERIKS exp 
+        {
+	  int idx = $2;
+	  if (idx == -1)
+	    err("Can't find Expression in symbol table");
+	  if (get_pok($2) == 0)
+	    err("Trying to dereference something that isn't a pointer");
+	  if (get_pok($2) == 0)
+	    err("Error while trying to find what the variable is pointing at");
+	  printf("Before move! %d",idx);
+	  print_symtab();	
+	
+	  $$ = take_reg();
+	
+	  printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
+	  gen_mov(idx,$$);
+	  printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
+	  set_type($$,get_type(get_pok(idx)));
+	  if (get_type(get_pok(idx)) == BYTE){
+	    code("\n\t\t\tLD.b\t r%d,[r%d]", $$,$$);
+		
+	  } else {
+	    code("\n\t\t\tLD\t r%d,[r%d]", $$,$$); // for pointer as well
+		
+	  }
+	  print_symtab();	
+	}
 
 	| _AMP exp {
-			int idx = $2;
-			if (idx == -1){
-				err("Can't find Expression in symbol table");
-			}
-			if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
-				err("Referencing invalid type");
-			}
-			printf("\nIDX:%d",idx);
-			$$ = take_reg();
-			set_pok($$, idx);
-			set_type($$,POINTER);
- 			print_symtab();
-			//printf("\n\n\t%d:%d\n\n",$$,idx);
-			print_symbol_address(idx, $$);
-			
-		}
+	  int idx = $2;
+	  if (idx == -1){
+	    err("Can't find Expression in symbol table");
+	  }
+	  if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
+	    err("Referencing invalid type");
+	  }
+	  printf("\nIDX:%d",idx);
+	  $$ = take_reg();
+	  set_pok($$, idx);
+	  set_type($$,POINTER);
+	  print_symtab();
+	  //printf("\n\n\t%d:%d\n\n",$$,idx);
+	  print_symbol_address(idx, $$);
+		
+	}
   ;
 
 literal
@@ -530,7 +524,7 @@ function_call
           err("wrong number of arguments");
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
         if($4 > 0)
-					code("\n\t\t\tSUB \tsp, %d", $4 * 2);
+	  code("\n\t\t\tSUB \tsp, %d", $4 * 2);
         set_type(FUN_REG, get_type(fcall_idx));
         $$ = FUN_REG;
       }
@@ -565,33 +559,32 @@ if_statement
 
 conditional_operator
 	: _LPAREN rel_exp _RPAREN _QMARK conditional_value _DDOT conditional_value
-		{
-			++lab_num;
-			gen_snlab("ter", lab_num);
-			if(get_type($5)!=get_type($7))
-				err("Conditional values not the same type");
-			int reg=take_reg();
-			code("\n\t\t\t%s\t.false%d",get_jump_stmt($2, TRUE),lab_num);
-		
-			gen_snlab("true", lab_num);
-			gen_mov($5, reg);
-			code("\n\t\t\tJ \t.exit%d", lab_num);
-  	 	 	gen_snlab("false", lab_num);
-			gen_mov($7, reg);
-			gen_snlab("exit",lab_num);
-			$$ = reg;
+	{
+	  ++lab_num;
+	  gen_snlab("ter", lab_num);
+	  if(get_type($5)!=get_type($7))
+	    err("Conditional values not the same type");
+	  int reg=take_reg();
+	  code("\n\t\t\t%s\t.false%d",get_jump_stmt($2, TRUE),lab_num);
 
-		}
+	  gen_snlab("true", lab_num);
+	  gen_mov($5, reg);
+	  code("\n\t\t\tJ \t.exit%d", lab_num);
+ 	  gen_snlab("false", lab_num);
+	  gen_mov($7, reg);
+	  gen_snlab("exit",lab_num);
+	  $$ = reg;
+	}
 	;
 
 conditional_value
-	: literal {	$$ = $1;	}
+	: literal { $$ = $1;}
 	| _ID 
-		{
-			$$ = lookup_symbol($1, (VAR|PAR|GLB));
-			if ($$ == -1)
-				err("'%s' undeclared", $1);
-		}
+	{
+	  $$ = lookup_symbol($1, (VAR|PAR|GLB));
+	  if ($$ == -1)
+	    err("'%s' undeclared", $1);
+	}
 	;
 
 if_part
@@ -602,15 +595,15 @@ if_part
       }
     rel_exp
       { 
-				code("\n\t\t\t%s\t.false%d", 
-			  get_jump_stmt($4, TRUE),$<i>3);
+	code("\n\t\t\t%s\t.false%d", 
+        get_jump_stmt($4, TRUE),$<i>3);
         gen_snlab("true", $<i>3);
       }
     _RPAREN statement
       {
-  
-				code("\n\t\t\tJ \t.exit%d", $<i>3);        
-				gen_snlab("false", $<i>3);
+
+	code("\n\t\t\tJ \t.exit%d", $<i>3);        
+	gen_snlab("false", $<i>3);
         $$ = $<i>3;
       }
   ;
@@ -618,9 +611,9 @@ if_part
 rel_exp
   : num_exp _RELOP num_exp
       {
-		if (get_type($1) != POINTER && get_type($3) != POINTER)
-	        if(get_type($1) != get_type($3))
-    	      err("invalid operands: relational operator");
+	if (get_type($1) != POINTER && get_type($3) != POINTER)
+          if(get_type($1) != get_type($3))
+    	   err("invalid operands: relational operator");
         $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);
         gen_cmp($1, $3);
       }
@@ -632,8 +625,8 @@ return_statement
         if(get_type(fun_idx) != get_type($2))
           err("incompatible types in return");
         gen_mov($2, FUN_REG);       
-    		code("\n\t\t\tJ \t.%s_exit", get_name(fun_idx));          
-			}
+	code("\n\t\t\tJ \t.%s_exit", get_name(fun_idx));          
+      }
   ;
 
 %%
