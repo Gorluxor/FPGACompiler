@@ -11,18 +11,69 @@ char invalid_value[] = "???";
 bool reg_taken[LAST_WORKING_REG] = {0};
 // REGISTERS
 
+
+typedef struct item {
+        int value;
+        int table_index;
+} Items; 
+Items inc_op[100];
+int inc_counter = 0;
+
+void post_op(int reg_index, bool increment){
+	bool already = FALSE;		
+	int index = 0;	
+	for (int i = 0; i < inc_counter; i ++){
+	  if (inc_op[i].table_index == reg_index){
+	    already = TRUE; 
+	    index = i;
+	  }
+	}
+	if (already){
+	  if (increment){
+	    inc_op[index].value += 1;
+	  }else{
+	    inc_op[index].value -= 1; 
+	  }
+	}else{
+	  index = inc_counter++;
+	  if (inc_counter > 100)
+	    err("Too many variables being incremented in one statement");
+	  if (increment){
+	    inc_op[index].value = 1;
+          }else{
+	    inc_op[index].value = -1;
+	  }
+	  inc_op[index].table_index = reg_index;
+	}
+}
+
+void print_inc_dec() {
+  for (int i = 0; i < inc_counter; i++) {
+    if (inc_op[i].value != 0) {
+
+      for (int j = 0; j < inc_op[i].value; j++) {
+        if (inc_op[i].value > 0)
+          gen_inc(1, inc_op[i].table_index);
+        else
+          gen_dec(1, inc_op[i].table_index);
+      }
+    }
+  }
+  inc_counter = 0;
+}
+
+
 int take_reg(void) {
 
-  for (int i = 0; i < LAST_WORKING_REG; i++)
-	{
-		if (reg_taken[i] != 1){
-			reg_taken[i] = 1;			
-			free_reg_num++;	
-			return i;		
-		}
-	}
-	err("Compiler error! No free registers!");
-	exit(EXIT_FAILURE);  
+  for (int i = 0; i < LAST_WORKING_REG; i++){
+    if (reg_taken[i] != 1){
+      reg_taken[i] = 1;			
+      free_reg_num++;	
+      return i;		
+    }
+  }
+  err("Compiler error! No free registers!");
+  exit(EXIT_FAILURE);  
   //if(free_reg_num > LAST_WORKING_REG) {
   //  err("Compiler error! No free registers!");
   //  exit(EXIT_FAILURE);
@@ -31,19 +82,20 @@ int take_reg(void) {
 }
 
 void free_reg(int a) {
-	 if(free_reg_num < 1) {
-      err("Compiler error! No more registers to free!");
-      exit(EXIT_FAILURE);
+  if(free_reg_num < 1) {
+    err("Compiler error! No more registers to free!");
+    exit(EXIT_FAILURE);
    }
    else{
-			if (reg_taken[a] == 1){
-			reg_taken[a] = 0;
-		  --free_reg_num;
-	    set_type(a, NO_TYPE);
-			}	
-		}
- 
+     if (reg_taken[a] == 1){
+	reg_taken[a] = 0;
+	--free_reg_num;
+	set_type(a, NO_TYPE);
+     }	
+   }
 }
+
+
 
 // Ako je u pitanju indeks registra, oslobodi registar
 void free_if_reg(int reg_index) {
@@ -62,83 +114,79 @@ void gen_snlab(char *str, int num) {
 
 // SYMBOL
 void print_symbol(int index) {
-  if(index > -1) {
-    if(get_kind(index) == VAR) // -n*4(%14)
+  if (index > -1) {
+    if (get_kind(index) == VAR) // -n*4(%14)
       //code("-%d(%%14)", get_atr1(index) * 4);
-		code("[r7 + %d]",  get_atr1(index) * 2 - 2); // Can't be 4 (as in 32bit)   
-	else 
-      if(get_kind(index) == PAR) // m*4(%14)
-        //code("%d(%%14)", 4 + get_atr1(index) *4);
-        code("[r7 - %d]", 4 +  get_atr1(index) *2); // diff char types TODO, changed to 4 from 2
-	  else
-        if(get_kind(index) == LIT)
-          code("%s", get_name(index));
-        else //function, reg
-          code("%s", get_name(index));
+      code("[r7 + %d]", get_atr1(index) * 2 - 2); // Can't be 4 (as in 32bit)   
+    else
+    if (get_kind(index) == PAR) // m*4(%14)
+      //code("%d(%%14)", 4 + get_atr1(index) *4);
+      code("[r7 - %d]", 4 + get_atr1(index) * 2); // diff char types TODO, changed to 4 from 2
+    else
+    if (get_kind(index) == LIT)
+      code("%s", get_name(index));
+    else //function, reg
+      code("%s", get_name(index));
   }
 }
 // prvo load iz zadate varijable, onda store u reg koristeci adresu iz loadovanje adrese
-void print_symbol_address(int index, int reg){
- if(index > -1) 
-  {
-	code("\n");
-    if(get_kind(index) == VAR){ // -n*4(%14)
-		int val = get_atr1(index) * 2 - 2;         
-		code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		        
-		//code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
-	}else{ 
-      if(get_kind(index) == PAR)// m*4(%14)
-	  { 
-			int val = 4 + get_atr1(index) * 2;         
-			code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
-			code("\t\t\tADD\tr%d,%d",reg, val);		
-			//code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
-	  }else
-		{
-		    if(get_kind(index) == LIT)
-		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-		    else //function, reg
-		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-  		}
-	}
+void print_symbol_address(int index, int reg) {
+  if (index > -1) {
+    code("\n");
+    if (get_kind(index) == VAR) { // -n*4(%14)
+      int val = get_atr1(index) * 2 - 2;
+      code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
+      //code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+    } else {
+      if (get_kind(index) == PAR) // m*4(%14)
+      {
+        int val = 4 + get_atr1(index) * 2;
+        code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
+        code("\t\t\tADD\tr%d,%d", reg, val);
+        //code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
+      } else {
+        if (get_kind(index) == LIT)
+          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+        else //function, reg
+          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+      }
+    }
   }
 }
 
-void print_symbol_value(int index, int reg){
- if(index > -1) 
-  {
-    if(get_kind(index) == VAR){ // -n*4(%14)
-		int val = get_atr1(index) * 4 - 4;         
-		code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
-		code("\t\t\tADD\tr%d,%d",reg, val);
-		//code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
-	}else{ 
-      if(get_kind(index) == PAR)// m*4(%14)
-	  { 
-			int val = 4 + get_atr1(index) * 4;         
-			code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);		       
-			code("\t\t\tADD\tr%d,%d",reg, val);		
-			//code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
-	  }else
-		{
-		    if(get_kind(index) == LIT)
-		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-		    else //function, reg
-		      code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-  		}
-	}
-  }	
+void print_symbol_value(int index, int reg) {
+  if (index > -1) {
+    if (get_kind(index) == VAR) { // -n*4(%14)
+      int val = get_atr1(index) * 4 - 4;
+      code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
+      code("\t\t\tADD\tr%d,%d", reg, val);
+      //code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+    } else {
+      if (get_kind(index) == PAR) // m*4(%14)
+      {
+        int val = 4 + get_atr1(index) * 4;
+        code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
+        code("\t\t\tADD\tr%d,%d", reg, val);
+        //code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
+      } else {
+        if (get_kind(index) == LIT)
+          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+        else //function, reg
+          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+      }
+    }
+  }
 
 }
 
 // OTHER
 
-void gen_cmp_internal(int op1_index, int op2_index){
-	if (get_type(op1_index) == INT || get_type(op2_index) == INT)
-		//warn("Compare generated for INT even though one of them is BYTE type")
-		code("\n\t\t\tCMP \t"); // IF ONE OF THEM IS INT, check as INT
+void gen_cmp_internal(int op1_index, int op2_index) {
+  if (get_type(op1_index) == INT || get_type(op2_index) == INT)
+    //warn("Compare generated for INT even though one of them is BYTE type")
+    code("\n\t\t\tCMP \t"); // IF ONE OF THEM IS INT, check as INT
   else
-	  code("\n\t\t\tCMP.b \t");
+    code("\n\t\t\tCMP.b \t");
   print_symbol(op1_index);
   code(",");
   print_symbol(op2_index);
@@ -147,66 +195,66 @@ void gen_cmp_internal(int op1_index, int op2_index){
 }
 
 void gen_cmp(int op1_index, int op2_index) {
-	int k1 = get_kind(op1_index);
-	int k2 = get_kind(op2_index);
-	if (k1 & (VAR|PAR|LIT)){ // scenario LIT, __ or VAR|PAR, __
-		int t1 = take_reg();
-		gen_mov_code(op1_index,t1);
-		gen_cmp_internal(t1, op2_index);
-	}else {
-		gen_cmp_internal(op1_index, op2_index);
-	}
+  int k1 = get_kind(op1_index);
+  int k2 = get_kind(op2_index);
+  if (k1 & (VAR | PAR | LIT)) { // scenario LIT, __ or VAR|PAR, __
+    int t1 = take_reg();
+    gen_mov_code(op1_index, t1);
+    gen_cmp_internal(t1, op2_index);
+  } else {
+    gen_cmp_internal(op1_index, op2_index);
+  }
 }
 
-void gen_mov_code(int input_index, int output_index){
-	int t1 = get_kind(input_index);
-	int t2 = get_kind(output_index);
-	set_pok(output_index, get_pok(input_index)); // for exp pointer
-	if (t2 & REG && (t1 & (REG|LIT))){ // normal MOV
-			code("\n\t\t\tMOV \t\t");
-			print_symbol(output_index);	  
-			code(",");
-			print_symbol(input_index);
-	}else if ((t2 & (VAR|PAR|GLB)) && (t1 & REG)){
-			if (get_type(input_index) == BYTE)
-				code("\n\t\t\tST.b \t\t");
-			else			
-				code("\n\t\t\tST \t\t");
-			print_symbol(output_index);
-			code(",");
-			print_symbol(input_index);
-	}else if ((t2 & (VAR|PAR)) && (t1 & LIT)){ // Intermediate step because LIT can't be used in ST
-			
-			int temp_reg = take_reg();
-			code("\n\t\t\tMOV \t\t");			
-			print_symbol(temp_reg);
-			code(",");
-			print_symbol(input_index);
-			
-			if (get_type(output_index) == BYTE)
-				code("\n\t\t\tST.b \t\t");
-			else
-				code("\n\t\t\tST \t\t");
-			print_symbol(output_index);
-			code(",");			
-			print_symbol(temp_reg);
-			free_reg(temp_reg);
-	}else if ((t1 & (VAR|PAR)) && (t2 & REG)){
-			if (get_type(input_index) == BYTE)
-				code("\n\t\t\tLD.b \t\t");
-			else
-				code("\n\t\t\tLD \t\t");
-			print_symbol(output_index);
-			code(",");
-			print_symbol(input_index);
-	}else {
-			code("\n\t\t\tMOV \t");
-			print_symbol(output_index);	  
-			code(",");
-			print_symbol(input_index);
-			printf("\nT1:%d,T2:%d\n", t1,t2 );			
-			warn("Default mov generated");
-	}
+void gen_mov_code(int input_index, int output_index) {
+  int t1 = get_kind(input_index);
+  int t2 = get_kind(output_index);
+  set_pok(output_index, get_pok(input_index)); // for exp pointer
+  if (t2 & REG && (t1 & (REG | LIT))) { // normal MOV
+    code("\n\t\t\tMOV \t\t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(input_index);
+  } else if ((t2 & (VAR | PAR | GLB)) && (t1 & REG)) {
+    if (get_type(input_index) == BYTE)
+      code("\n\t\t\tST.b \t\t");
+    else
+      code("\n\t\t\tST \t\t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(input_index);
+  } else if ((t2 & (VAR | PAR)) && (t1 & LIT)) { // Intermediate step because LIT can't be used in ST
+
+    int temp_reg = take_reg();
+    code("\n\t\t\tMOV \t\t");
+    print_symbol(temp_reg);
+    code(",");
+    print_symbol(input_index);
+
+    if (get_type(output_index) == BYTE)
+      code("\n\t\t\tST.b \t\t");
+    else
+      code("\n\t\t\tST \t\t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(temp_reg);
+    free_reg(temp_reg);
+  } else if ((t1 & (VAR | PAR)) && (t2 & REG)) {
+    if (get_type(input_index) == BYTE)
+      code("\n\t\t\tLD.b \t\t");
+    else
+      code("\n\t\t\tLD \t\t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(input_index);
+  } else {
+    code("\n\t\t\tMOV \t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(input_index);
+    printf("\nT1:%d,T2:%d\n", t1, t2);
+    warn("Default mov generated");
+  }
 }
 
 void gen_p_move(int input_index, int output_index){
@@ -222,12 +270,11 @@ void gen_mov(int input_index, int output_index) {
   //code("\n\t\t\tMOV \t");
   //print_symbol(output_index);	  
   //code(",");
-	//print_symbol(input_index);
- 	gen_mov_code(input_index, output_index);
-  
+  //print_symbol(input_index);
+  gen_mov_code(input_index, output_index);
 
   //ako se smešta u registar, treba preneti tip 
-  if(output_index >= 0 && output_index <= LAST_WORKING_REG)
+  if (output_index >= 0 && output_index <= LAST_WORKING_REG)
     set_type(output_index, get_type(input_index));
   free_if_reg(input_index);
 }
@@ -254,26 +301,25 @@ char* get_jump_stmt(int jump_idx, bool opp) {
       return jumps[jump_idx];
 } 
 
-void gen_inc(int num, int idx){
-	//TODO special case for GLB
-	if (get_type(idx) == INT){
-		code("\n\t\tINC \t");		
-	} else if (get_type(idx) == BYTE) {
-		code("\n\t\tINC.b\t");	
-	}else {
-		code("\n\t\tINC \t");
-	}
-	print_symbol(idx);	
+void gen_inc(int num, int idx) {
+  //TODO special case for GLB
+  if (get_type(idx) == INT) {
+    code("\n\t\tINC \t");
+  } else if (get_type(idx) == BYTE) {
+    code("\n\t\tINC.b\t");
+  } else {
+    code("\n\t\tINC \t");
+  }
+  print_symbol(idx);
 }
 
-
-void gen_dec(int num, int idx){
-	if (get_type(idx) == INT){
-		code("\n\t\t\tDEC \t");		
-	} else if (get_type(idx) == BYTE) {
-		code("\n\t\t\tDEC.b\t");	
-	} else if (get_type(idx) == POINTER){
-		code("\n\t\t\tDEC \t");	//TODO pointer
-	}	
-	print_symbol(idx);	
+void gen_dec(int num, int idx) {
+  if (get_type(idx) == INT) {
+    code("\n\t\t\tDEC \t");
+  } else if (get_type(idx) == BYTE) {
+    code("\n\t\t\tDEC.b\t");
+  } else if (get_type(idx) == POINTER) {
+    code("\n\t\t\tDEC \t"); //TODO pointer
+  }
+  print_symbol(idx);
 }

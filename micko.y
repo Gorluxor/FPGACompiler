@@ -24,6 +24,7 @@
   int pointerType = 0;
   int global = 1;
   FILE *output;
+ 
 %}
 
 %union {
@@ -249,7 +250,7 @@ variable
 
 statement_list
   : /* empty */
-  | statement_list statement
+  | statement_list statement { print_inc_dec(); }
   ;
 
 statement
@@ -427,18 +428,21 @@ exp
   | _LPAREN num_exp _RPAREN
      { $$ = $2; }
   | _ID _INC 
-     { // INC
+        { // INC
 	$$ = lookup_symbol($1, (VAR|PAR|GLB));
 	if ($$ == -1)
 	  err("'%s' undeclared", $1);
 
-	if (get_type($$) == BYTE) {
+	/*if (get_type($$) == BYTE) {
   	  code("\n\t\tINC.b\t");	
 	} else {
 	//if (get_type($$) == INT){ for pointers etc 
 	  code("\n\t\tINC \t");		
 	}			
-	print_symbol($$);
+	print_symbol($$);*/
+        
+         post_op($$, TRUE);
+        
 	}
 	| _ID _DEC 
 	{ // DEC
@@ -446,13 +450,14 @@ exp
 	  if ($$ == -1)
 	    err("'%s' undeclared", $1);
 
-	  if (get_type($$) == BYTE) {
+	  /*if (get_type($$) == BYTE) {
 	    code("\n\t\tDEC.b\t");	
 	  }else {
 	  //if (get_type($$) == INT){  for pointers etc 
 	    code("\n\t\tDEC \t");		
 	  }			
-	  print_symbol($$);
+	  print_symbol($$);*/
+          post_op($$, FALSE);
 	}
 	| _ASTERIKS exp 
         {

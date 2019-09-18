@@ -853,229 +853,226 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 15 "micko.l"
-{
-			BEGIN(ASM); //freopen("output.bin", "a", stdout);
-		}
+{  BEGIN(ASM); /*freopen("output.bin", "a", stdout);*/ }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 19 "micko.l"
-{ 
-			yylval.s = strdup(yytext); return _ASM;
-			}
+#line 17 "micko.l"
+{ yylval.s = strdup(yytext); return _ASM; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 23 "micko.l"
+#line 19 "micko.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 26 "micko.l"
+#line 22 "micko.l"
 { /* skip */ }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 28 "micko.l"
+#line 24 "micko.l"
 { yylval.i = INT;  return _TYPE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 29 "micko.l"
+#line 25 "micko.l"
 { yylval.i = BYTE; return _TYPE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 30 "micko.l"
+#line 26 "micko.l"
 { yylval.i = VOID; return _TYPE; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 33 "micko.l"
+#line 29 "micko.l"
 { return _IF; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 34 "micko.l"
+#line 30 "micko.l"
 { return _ELSE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 35 "micko.l"
+#line 31 "micko.l"
 { return _RETURN; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 36 "micko.l"
+#line 32 "micko.l"
 { return _FOR; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 37 "micko.l"
+#line 33 "micko.l"
 { return _DO; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 38 "micko.l"
+#line 34 "micko.l"
 { return _WHILE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 40 "micko.l"
+#line 36 "micko.l"
 { return _INC; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 41 "micko.l"
+#line 37 "micko.l"
 { return _DEC; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 42 "micko.l"
+#line 38 "micko.l"
 { return _COMMA; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 44 "micko.l"
+#line 40 "micko.l"
 { return _LPAREN; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 45 "micko.l"
+#line 41 "micko.l"
 { return _RPAREN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 46 "micko.l"
+#line 42 "micko.l"
 { return _LBRACKET; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 47 "micko.l"
+#line 43 "micko.l"
 { return _RBRACKET; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 48 "micko.l"
+#line 44 "micko.l"
 { return _SEMICOLON; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 49 "micko.l"
+#line 45 "micko.l"
 { return _ASSIGN; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 50 "micko.l"
+#line 46 "micko.l"
 { return _QMARK; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 51 "micko.l"
+#line 47 "micko.l"
 { return _DDOT; } 
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 53 "micko.l"
+#line 49 "micko.l"
 { return _AMP; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 54 "micko.l"
+#line 50 "micko.l"
 { yylval.i = ADD; return _AROP; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 55 "micko.l"
+#line 51 "micko.l"
 { yylval.i = SUB; return _AROP; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 56 "micko.l"
+#line 52 "micko.l"
 { return _ASTERIKS; } //{ yylval.i = MUL; return _AROP; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 57 "micko.l"
+#line 53 "micko.l"
 { yylval.i = DIV; return _AROP; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 60 "micko.l"
+#line 56 "micko.l"
 { yylval.i = LT; return _RELOP; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 61 "micko.l"
+#line 57 "micko.l"
 { yylval.i = GT; return _RELOP; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 62 "micko.l"
+#line 58 "micko.l"
 { yylval.i = LE; return _RELOP; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 63 "micko.l"
+#line 59 "micko.l"
 { yylval.i = GE; return _RELOP; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 64 "micko.l"
+#line 60 "micko.l"
 { yylval.i = EQ; return _RELOP; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 65 "micko.l"
+#line 61 "micko.l"
 { yylval.i = NE; return _RELOP; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 67 "micko.l"
+#line 63 "micko.l"
 { yylval.s = strdup(yytext); 
                        return _ID; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 69 "micko.l"
-{ if (yytext[0] == '+'){
-							yylval.s = strdup(&(yytext[1]));  // escaping + sign
-						}else {
-							yylval.s = strdup(yytext); 
-						}
+#line 65 "micko.l"
+{ 
+		       if (yytext[0] == '+'){
+	  		 yylval.s = strdup(&(yytext[1]));  // escaping + sign
+		       }else{
+			 yylval.s = strdup(yytext); 
+		       }
                        return _INT_NUMBER;
-					}
+		     }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 76 "micko.l"
+#line 73 "micko.l"
 { if (yytext[0] == '+'){
-							yylval.s = strdup(&(yytext[1])); // escaping + sign
-						} else{
-							yylval.s = strdup(yytext); 
-						}
+			 yylval.s = strdup(&(yytext[1])); // escaping + sign
+		       } else{
+			 yylval.s = strdup(yytext); 
+		       }
                        yylval.s[yyleng-1] = 0;
                        return _BYTE_NUMBER;
 					 }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 85 "micko.l"
+#line 82 "micko.l"
 { /* skip */ }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 86 "micko.l"
+#line 83 "micko.l"
 { printf("line %d: LEXICAL ERROR on char %c\n", yylineno, *yytext);}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 87 "micko.l"
+#line 84 "micko.l"
 ECHO;
 	YY_BREAK
-#line 1079 "lex.yy.c"
+#line 1076 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(ASM):
 	yyterminate();
@@ -2091,7 +2088,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 87 "micko.l"
+#line 84 "micko.l"
 
 
 

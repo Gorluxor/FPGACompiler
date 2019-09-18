@@ -17,6 +17,9 @@ void gen_sslab(char *str1, char *str2);
 // od jednog stringa i jednog broja npr: @if0
 void gen_snlab(char *str, int num);
 
+void post_op(int reg_index, bool increment);
+void print_inc_dec();
+
 // ispisuje simbol (u odgovarajucem obliku) 
 // koji se nalazi na datom indeksu u tabeli simbola
 void print_symbol(int index);

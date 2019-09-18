@@ -80,7 +80,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 29 "micko.y" /* yacc.c:1909  */
+#line 30 "micko.y" /* yacc.c:1909  */
 
   int i;
   char *s;
