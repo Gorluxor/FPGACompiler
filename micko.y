@@ -5,7 +5,7 @@
   #include "symtab.h"
   #include "codegen.h"
   #include <string.h>
-  #define YYDEBUG 1
+  #define YYDEBUG 0
   int yyparse(void);
   int yylex(void);
   int yyerror(char *s);
@@ -24,7 +24,9 @@
   int pointerType = 0;
   int global = 1;
   FILE *output;
- 
+  int arg_counter = 0;
+  int par_counter = 0;
+  extern unsigned no_type_array[];
 %}
 
 %union {
@@ -113,7 +115,7 @@ function
 	global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
-          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, NO_ATR, pointerType); // pointerType for fun
+          fun_idx = insert_symbol($2, FUN, $1, NO_ATR, no_type_array, pointerType); // pointerType for fun
         else 
           err("redefinition of function '%s'", $2);
 
@@ -124,11 +126,13 @@ function
       }
     _LPAREN parameter_list _RPAREN
       {
+        par_counter = 0;
         set_atr1(fun_idx, $5);
         var_num = 0;
       }
     body
       {
+         
 	clear_symbols(fun_idx + 1);
 	gen_sslab($2,"_exit");
 	code("\n\t\t\tMOV \tsp,r7");
@@ -154,17 +158,17 @@ type
 
 parameter_list
 	: { $$ = 0;}
-	| parameter { $$ = $1; }
-	| parameter_list _COMMA parameter { $$ = $1 + $3;}
+	| parameter { par_counter++; $$ = $1; }
+	| parameter_list _COMMA parameter { par_counter = $1 + $3; $$ = $1 + $3;}
 	;
 parameter
   //: /* empty */
   //    { $$ = 0; }
 
   : type _ID
-      { // TODO promeniti tabelu simbola za viseparametsku funkciju
-        insert_symbol($2, PAR, $1, 1, NO_ATR, NO_ATR);
-        set_atr2(fun_idx, $1);
+      {       
+        insert_symbol($2, PAR, $1, 1, no_type_array, NO_ATR);
+        set_atr2(fun_idx, par_counter, $1);
         $$ = 1;
       }
   ;
@@ -172,6 +176,7 @@ parameter
 body
   : _LBRACKET variable_list
       {
+       
         if(var_num)
 	  code("\n\t\t\tADD\t\tsp, %d",4*var_num); // was 2 before push4
         gen_sslab(get_name(fun_idx), "_body");
@@ -180,7 +185,7 @@ body
   ;
 
 variable_list
-  : /* empty */
+  : /* empty */ 
   | variable_list variable
   ;
 
@@ -192,17 +197,17 @@ variable_part
           if (global ==  0){
 	    if(lookup_symbol($1, VAR|PAR) == -1){
 	      if (typeOf == POINTER)
-		insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+		insert_symbol($1, VAR, typeOf, ++var_num, no_type_array, pointerType);
 	      else					
-		insert_symbol($1, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);
+		insert_symbol($1, VAR, typeOf, ++var_num, no_type_array, NO_ATR);
 	    }else 
 		err("redefinition of '%s'", $1);		
           } else {
 	    if (lookup_symbol($1, GLB) == -1){
 		if (typeOf == POINTER)
-		  insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+		  insert_symbol($1, GLB, typeOf, NO_ATR, no_type_array, pointerType);
 		else 
-		  insert_symbol($1, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+		  insert_symbol($1, GLB, typeOf, NO_ATR, no_type_array, NO_ATR);
 	    }
 		else
 		  err("Redefinition of global varibale '%s'", $1);
@@ -217,17 +222,17 @@ variable_part
 	  if (global == 0){
 	    if(lookup_symbol($3, VAR|PAR) == -1){
 		if (typeOf == POINTER)
-		  insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, pointerType);
+		  insert_symbol($3, VAR, typeOf, ++var_num, no_type_array, pointerType);
 		else					
-		  insert_symbol($3, VAR, typeOf, ++var_num, NO_ATR, NO_ATR);        	  
+		  insert_symbol($3, VAR, typeOf, ++var_num, no_type_array, NO_ATR);        	  
 		}else 
 		  err("redefinition of '%s'", $3);
 		} else {
 		  if (lookup_symbol($3, GLB) == -1){
 		    if (typeOf == POINTER)
-		      insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, pointerType);
+		      insert_symbol($3, GLB, typeOf, NO_ATR, no_type_array, pointerType);
 		    else 
-		      insert_symbol($3, GLB, typeOf, NO_ATR, NO_ATR, NO_ATR);
+		      insert_symbol($3, GLB, typeOf, NO_ATR, no_type_array, NO_ATR);
 		  }else
 		      err("Redefinition of global varibale '%s'", $3);
 		
@@ -341,12 +346,13 @@ for_loop
 
 
 assignment_statement
-  :  left_part_assignment _SEMICOLON
+  :   left_part_assignment _SEMICOLON
   ;
 
 left_part_assignment
 	: _ID _ASSIGN num_exp 
 	{
+          
 	  int idx = lookup_symbol($1, (VAR|PAR|GLB));
 	  if(idx == -1)
 		err("invalid lvalue '%s' in assignment", $1);
@@ -369,7 +375,7 @@ arop
   | _ASTERIKS { $$ = MUL; }
 
 num_exp
-  : exp
+  : exp 
 
   | num_exp arop exp
   {
@@ -432,14 +438,6 @@ exp
 	$$ = lookup_symbol($1, (VAR|PAR|GLB));
 	if ($$ == -1)
 	  err("'%s' undeclared", $1);
-
-	/*if (get_type($$) == BYTE) {
-  	  code("\n\t\tINC.b\t");	
-	} else {
-	//if (get_type($$) == INT){ for pointers etc 
-	  code("\n\t\tINC \t");		
-	}			
-	print_symbol($$);*/
         
          post_op($$, TRUE);
         
@@ -450,13 +448,6 @@ exp
 	  if ($$ == -1)
 	    err("'%s' undeclared", $1);
 
-	  /*if (get_type($$) == BYTE) {
-	    code("\n\t\tDEC.b\t");	
-	  }else {
-	  //if (get_type($$) == INT){  for pointers etc 
-	    code("\n\t\tDEC \t");		
-	  }			
-	  print_symbol($$);*/
           post_op($$, FALSE);
 	}
 	| _ASTERIKS exp 
@@ -468,14 +459,14 @@ exp
 	    err("Trying to dereference something that isn't a pointer");
 	  if (get_pok($2) == 0)
 	    err("Error while trying to find what the variable is pointing at");
-	  printf("Before move! %d",idx);
+	  //printf("Before move! %d",idx);
 	  print_symtab();	
 	
 	  $$ = take_reg();
 	
-	  printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
+	  //printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
 	  gen_mov(idx,$$);
-	  printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
+	  //printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
 	  set_type($$,get_type(get_pok(idx)));
 	  if (get_type(get_pok(idx)) == BYTE){
 	    code("\n\t\t\tLD.b\t r%d,[r%d]", $$,$$);
@@ -495,7 +486,7 @@ exp
 	  if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
 	    err("Referencing invalid type");
 	  }
-	  printf("\nIDX:%d",idx);
+
 	  $$ = take_reg();
 	  set_pok($$, idx);
 	  set_type($$,POINTER);
@@ -519,12 +510,15 @@ literal
 function_call
   : _ID 
       {
+       
         fcall_idx = lookup_symbol($1, FUN);
         if(fcall_idx == -1)
           err("'%s' is not a function", $1);
+        print_symtab();
       }
     _LPAREN argument_list _RPAREN
       {
+        arg_counter = 0;
         if(get_atr1(fcall_idx) != $4)
           err("wrong number of arguments");
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
@@ -541,15 +535,26 @@ argument_list
 	;
 argument
   : /* empty */
-    { $$ = 0; }
+    { $$ = 0; arg_counter = 0;}
 
   | num_exp
     { 
-      if(get_atr2(fcall_idx) != get_type($1))
-        err("incompatible type for argument");
+
+      if (get_atr2(fcall_idx,arg_counter) != get_type($1))
+        err("incompatible type for argument");      
+      //if(get_atr2(fcall_idx) != get_type($1))
+      arg_counter++;
       free_if_reg($1);
-      code("\n\t\t\tPUSH\t");
-      print_symbol($1);
+      if (get_type($1) != POINTER){
+        code("\n\t\t\tPUSH\t");
+        print_symbol($1);
+      }else { // check
+        int a = take_reg();
+        gen_mov($1, a);
+        code("\n\t\t\tPUSH\t");
+        print_symbol(a);
+        free_if_reg(a);
+      }
       $$ = 1;
     }
   ;
@@ -650,8 +655,8 @@ void warning(char *s) {
 
 int main() {
 	
-	#if YYDEBUG == 1
-	extern int yydebug;
+  #if YYDEBUG == 1
+  extern int yydebug;
   yydebug = 1;
   #endif
 
