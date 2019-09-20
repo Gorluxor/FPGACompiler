@@ -8,24 +8,16 @@ main:
 			MOV 	r7,sp
 			ADD		sp, 12
 .main_body:
-			MOV 		r0,0
-			ST 		[r7 + 4],r0		;ASSIGN
-			MOV 		r0,10
+			MOV 		r0,4
 			ST 		[r7 + 0],r0		;ASSIGN
-.for0:
-			LD 		r0,[r7 + 0]
-			CMP 	r0,0
-			LD 		r0,[r7 + 0]	;EXPRETION
-			ADD		r0,1
-			ST 		[r7 + 0],r0		;ASSIGN
-			JSE 	.exit0
-			LD 		r0,[r7 + 4]	;EXPRETION
-			ADD		r0,2
+			MOV	r0,r7	;POINTER
 			ST 		[r7 + 4],r0		;ASSIGN
-			DEC 	[r7 + 0]
-			j	.for0
-.exit0:
-			LD 		r6,[r7 + 4]
+			LD 		r0,[r7 + 4]
+			LD	 r0,[r0]
+			MOV 		r1,r0	;EXPRETION
+			MUL		r1,3
+			ST 		[r7 + 2],r1		;ASSIGN
+			LD 		r6,[r7 + 2]
 			J 	.main_exit
 .main_exit:
 			MOV 	sp,r7
