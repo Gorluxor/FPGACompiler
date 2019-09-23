@@ -100,8 +100,10 @@ void set_type(int index, unsigned type) {
 }
 
 unsigned get_type(int index) {
-  if(index > -1 && index < SYMBOL_TABLE_LENGTH)
-    return symbol_table[index].type;
+  if(index > -1 && index < SYMBOL_TABLE_LENGTH){   
+
+	 return symbol_table[index].type % 2 == 0 ? symbol_table[index].type : symbol_table[index].type - 1;
+  }
   return NO_TYPE;
 }
 

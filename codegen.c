@@ -284,6 +284,7 @@ void gen_mov(int input_index, int output_index) {
   free_if_reg(input_index);
 }
 
+//Deprecated
 char* get_arop_stmt_adv(int index, int arop, int type){
    if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
     return invalid_value;
@@ -299,8 +300,19 @@ char* get_arop_stmt_adv(int index, int arop, int type){
      }
 }
 
-//Deprecated
+int get_real_type(int type){
+  int ltype;// INT 1, BYTE 2, SHORT 4
+  if (type == BYTE)  ltype = 2; 
+  else if (type == SHORT) ltype = 3; 
+  else if (type == INT) ltype = 1; 
+  else if (type == VOID) ltype = 4;
+  else ltype = 0; 	
+ return ltype;
+}
+
+
 char* get_arop_stmt(int arop, int type) {
+  type = get_real_type(type);
   if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
     return invalid_value;
   else
@@ -308,7 +320,7 @@ char* get_arop_stmt(int arop, int type) {
 }
 
 int get_jump_idx(int relop, bool type) {
-  return relop + ((type - 1) * RELOP_NUMBER);
+  return relop + ((get_real_type(type) - 1) * RELOP_NUMBER);
 }
 
 char* get_jump_stmt(int jump_idx, bool opp) {
