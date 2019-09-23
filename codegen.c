@@ -186,10 +186,10 @@ void gen_cmp_internal(int op1_index, int op2_index) {
      code("\n\t\t\tCMP.w \t");  
   else 
     {
-    if (get_type(op1_index) == WORD || get_type(op2_index) == WORD)
+    if (get_type(op1_index) == INT || get_type(op2_index) == INT)
         code("\n\t\t\tCMP.w \t");
-    else if (get_type(op1_index) == INT || get_type(op2_index) == INT)
-        code("\n\t\t\tCMP \t");
+    else if (get_type(op1_index) == SHORT || get_type(op2_index) == SHORT)
+        code("\n\t\t\tCMP.s \t");
     else 
         code("\n\t\t\tCMP.b \t");
     }
@@ -238,8 +238,8 @@ void gen_mov_code(int input_index, int output_index) {
 
     if (get_type(output_index) == BYTE)
       code("\n\t\t\tST.b \t\t");
-    else if (get_type(output_index) == BYTE)
-      code("\n\t\t\tST \t\t");
+    else if (get_type(output_index) == SHORT)
+      code("\n\t\t\tST.s \t\t");
     else 
       code("\n\t\t\tST.w \t\t");
     print_symbol(output_index);
@@ -285,7 +285,7 @@ void gen_mov(int input_index, int output_index) {
 }
 
 char* get_arop_stmt_adv(int index, int arop, int type){
-   if ((type < INT) || (type > WORD) || (arop < 0) || (arop >= AROP_NUMBER))
+   if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
     return invalid_value;
    else 
      { printf("IND:%d,AROP:%d,T:%d", index, arop, type);
@@ -301,7 +301,7 @@ char* get_arop_stmt_adv(int index, int arop, int type){
 
 //Deprecated
 char* get_arop_stmt(int arop, int type) {
-  if ((type < INT) || (type > WORD) || (arop < 0) || (arop >= AROP_NUMBER))
+  if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
     return invalid_value;
   else
     return arithmetic_operators[arop + (type - 1) * AROP_NUMBER];
@@ -323,25 +323,25 @@ char* get_jump_stmt(int jump_idx, bool opp) {
 
 void gen_inc(int num, int idx) {
   //TODO special case for GLB
-  code("\n\t\t\tINC.s \t");
-  /*if (get_type(idx) == INT) {
-    code("\n\t\tINC \t");
-  } else if (get_type(idx) == BYTE) {
-    code("\n\t\tINC.b\t");
+  //code("\n\t\t\tINC.s \t");
+  if (get_type(idx) == BYTE) {
+    code("\n\t\tINC.b \t");
+  } else if (get_type(idx) == SHORT) {
+    code("\n\t\tINC.s\t");
   } else {
     code("\n\t\tINC.w \t");
-  }*/
+  }
   print_symbol(idx);
 }
 
 void gen_dec(int num, int idx) {
-  code("\n\t\t\tDEC.w \t");
-  /*if (get_type(idx) == INT) {
-    code("\n\t\t\tDEC \t");
-  } else if (get_type(idx) == BYTE) {
-    code("\n\t\t\tDEC.b\t");
+  //code("\n\t\t\tDEC.w \t");
+  if (get_type(idx) == BYTE) {
+    code("\n\t\t\tDEC.b \t");
+  } else if (get_type(idx) == SHORT) {
+    code("\n\t\t\tDEC.s\t");
   } else if (get_type(idx) == POINTER) {
     code("\n\t\t\tDEC.w \t"); //TODO pointer
-  }*/
+  }
   print_symbol(idx);
 }

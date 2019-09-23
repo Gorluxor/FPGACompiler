@@ -10,7 +10,7 @@
 #define LAST_WORKING_REG       11
 #define FUN_REG                12 
 #define CHAR_BUFFER_LENGTH   128
-#define LAST_WORKING_ADDRESS 0x0000ffff
+#define LAST_WORKING_ADDRESS 0x0000fffe
 //0x1869E   0x0000ffff
 extern char char_buffer[CHAR_BUFFER_LENGTH];
 extern int out_lin;
@@ -24,7 +24,7 @@ extern int yyerror(char *s);
 #define code(args...) ({fprintf(output, args); if (++out_lin > 2000) err("Too many output lines"), exit(1); })
 
 //tipovi podataka
-enum types { NO_TYPE, INT, BYTE, WORD, VOID, POINTER};
+enum types { NO_TYPE, INT, BYTE, SHORT, VOID, POINTER};
 
 //vrste simbola (moze ih biti maksimalno 32)
 enum kinds { NO_KIND = 0x1, REG = 0x2, LIT = 0x4, 
@@ -33,9 +33,9 @@ enum kinds { NO_KIND = 0x1, REG = 0x2, LIT = 0x4,
 //konstante arithmetickih operatora
 enum arops { ADD, SUB, MUL, DIV, AROP_NUMBER };
 //stringovi za generisanje aritmetickih naredbi
-static char *arithmetic_operators[] = { "ADD", "SUB", "MUL", "DIV",
+static char *arithmetic_operators[] = { "ADD.w", "SUB.w", "MUL.w", "DIV.w",
                                         "ADD.b", "SUB.b", "MUL.b", "DIV.b"
-										"ADD.w", "SUB.w", "MUL.w", "DIV.w" };
+										"ADD.s", "SUB.s", "MUL.s", "DIV.s" };
 
 //konstante relacionih operatora
 enum relops { LT, GT, LE, GE, EQ, NE, RELOP_NUMBER };

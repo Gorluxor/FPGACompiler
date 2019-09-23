@@ -41,6 +41,7 @@
 %token <s> _ID
 %token <s> _INT_NUMBER
 %token <s> _BYTE_NUMBER
+%token <s> _SHORT_NUMBER
 %token _LPAREN
 %token _RPAREN
 %token _LBRACKET
@@ -394,9 +395,9 @@ num_exp
 	set_pok($$, get_pok($3)); // for pointer
 	gen_mov_code($1,$$);
 
-	code("\t;EXPRETION");
-        code("\n\t\t\t%s\t\t", get_arop_stmt_adv($$,$2,t1));
-	//code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1)); its for the register, which is always .w
+	code("\t;EXPRESSION");
+      //  code("\n\t\t\t%s\t\t", get_arop_stmt_adv($$,$2,t1));
+	code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1)); //its for the register, which is always .w
 		       
 	
 	print_symbol($$);

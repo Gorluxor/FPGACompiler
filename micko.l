@@ -3,6 +3,10 @@
    #include <string.h>
    #include "micko.tab.h"
    #include "defs.h"
+   #include "limits.h"
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
    extern YYSTYPE yylval;
 
 // int asm_count = 0;
@@ -24,7 +28,7 @@
 "int"                { yylval.i = INT;  return _TYPE; }
 "char"               { yylval.i = BYTE; return _TYPE; }
 "void"		     { yylval.i = VOID; return _TYPE; }
-
+"short"               { yylval.i = SHORT; return _TYPE; }
 
 "if"                 { return _IF; }
 "else"               { return _ELSE; }
@@ -62,13 +66,42 @@
 
 [a-zA-Z][a-zA-Z0-9]* { yylval.s = strdup(yytext); 
                        return _ID; }
-[+-]?[0-9]{1,6}      { 
+
+
+ /*[+-]?[0-9]{1,10}     { 
+			long conv = atoi(yytext[0] == '+' ? strdup(&(yytext[1])) : strdup(yytext));
+			if (conv > INT_MAX || conv < INT_MIN){
+			  err("Number out of range");
+			}else if (conv > SHRT_MAX || conv < SHRT_MIN){
+			  yylval.s = yytext[0] == '+' ? strdup(&(yytext[1])) : strdup(yytext);
+			  return _INT_NUMBER;
+			}else if (conv > CHAR_MAX || conv < CHAR_MIN){
+			  yylval.s = yytext[0] == '+' ? strdup(&(yytext[1])) : strdup(yytext);
+			  return _SHORT_NUMBER;
+			} else {
+			  yylval.s = yytext[0] == '+' ? strdup(&(yytext[1])) : strdup(yytext);
+			  return _BYTE_NUMBER;
+			}
+
+		     } */
+
+[+-]?[0-9]{1,10}      { 
 		       if (yytext[0] == '+'){
 	  		 yylval.s = strdup(&(yytext[1]));  // escaping + sign
 		       }else{
 			 yylval.s = strdup(yytext); 
 		       }
                        return _INT_NUMBER;
+		     }
+
+
+[+-]?[0-9]{1,6}[s]      { 
+		       if (yytext[0] == '+'){
+	  		 yylval.s = strdup(&(yytext[1]));  // escaping + sign
+		       }else{
+			 yylval.s = strdup(yytext); 
+		       }
+                       return _SHORT_NUMBER;
 		     }
 [+-]?[0-9]{1,3}[bB]  { if (yytext[0] == '+'){
 			 yylval.s = strdup(&(yytext[1])); // escaping + sign

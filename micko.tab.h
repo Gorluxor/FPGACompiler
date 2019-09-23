@@ -52,26 +52,27 @@ extern int yydebug;
     _ID = 262,
     _INT_NUMBER = 263,
     _BYTE_NUMBER = 264,
-    _LPAREN = 265,
-    _RPAREN = 266,
-    _LBRACKET = 267,
-    _FOR = 268,
-    _RBRACKET = 269,
-    _ASSIGN = 270,
-    _SEMICOLON = 271,
-    _AROP = 272,
-    _ASTERIKS = 273,
-    _RELOP = 274,
-    _INC = 275,
-    _DEC = 276,
-    _DDOT = 277,
-    _QMARK = 278,
-    _COMMA = 279,
-    _DO = 280,
-    _WHILE = 281,
-    _AMP = 282,
-    _ASM = 283,
-    ONLY_IF = 284
+    _SHORT_NUMBER = 265,
+    _LPAREN = 266,
+    _RPAREN = 267,
+    _LBRACKET = 268,
+    _FOR = 269,
+    _RBRACKET = 270,
+    _ASSIGN = 271,
+    _SEMICOLON = 272,
+    _AROP = 273,
+    _ASTERIKS = 274,
+    _RELOP = 275,
+    _INC = 276,
+    _DEC = 277,
+    _DDOT = 278,
+    _QMARK = 279,
+    _COMMA = 280,
+    _DO = 281,
+    _WHILE = 282,
+    _AMP = 283,
+    _ASM = 284,
+    ONLY_IF = 285
   };
 #endif
 
@@ -85,7 +86,7 @@ union YYSTYPE
   int i;
   char *s;
 
-#line 89 "micko.tab.h" /* yacc.c:1909  */
+#line 90 "micko.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
