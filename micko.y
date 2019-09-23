@@ -81,12 +81,12 @@ program
   : 	
   {
     // CREATED TO JUMP TO MAIN
-    code("\tBegin_INST:");
-    code("\n\t\tMOV sp, 0xeeee");
-    code("\n\t\tPUSH\t 0x0");
 
-    code("\n\t\tCALL\t main"); // previous function doesnt exist
-    code("\n\t\tHALT");	
+	code("\tBegin_INST:");
+    code("\n\t\tMOV.w sp, %d",LAST_WORKING_ADDRESS);
+ 	code("\n\t\tADD.w r13, %d", LAST_WORKING_ADDRESS - 4);
+    code("\n\t\tCALL\t main"); 
+	code("\n\t\tHALT");	
   } 
   variable_list function_list
   {  
@@ -121,8 +121,8 @@ function
 
         code("\n%s:", $2);
 
-	code("\n\t\t\tPUSH\tr7"); 
-	code("\n\t\t\tMOV \tr7,sp");      
+	    code("\n\t\t\tPUSH\tr13"); 
+	    code("\n\t\t\tMOV.w \tr13,sp");      
       }
     _LPAREN parameter_list _RPAREN
       {
@@ -133,11 +133,11 @@ function
     body
       {
          
-	clear_symbols(fun_idx + 1);
-	gen_sslab($2,"_exit");
-	code("\n\t\t\tMOV \tsp,r7");
-	code("\n\t\t\tPOP \tr7");
-	code("\n\t\t\tRET");			
+	    clear_symbols(fun_idx + 1);
+	    gen_sslab($2,"_exit");
+	    code("\n\t\t\tMOV.w \tsp,r13");
+	    code("\n\t\t\tPOP \tr13");
+	    code("\n\t\t\tRET");			
       }
   ;
 
@@ -178,7 +178,7 @@ body
       {
        
         if(var_num)
-	  code("\n\t\t\tADD\t\tsp, %d",4*var_num); // was 2 before push4
+	  code("\n\t\t\tSUB.w\t\tsp, %d",4*var_num); // was 2 before push4
         gen_sslab(get_name(fun_idx), "_body");
       }
     statement_list _RBRACKET
@@ -213,7 +213,7 @@ variable_part
 		  err("Redefinition of global varibale '%s'", $1);
         	// Generate Directives for global variables
 	    code("\n%s", $1);
-	    code("\n\t\t\t #res 2"); // TODO type check??	
+	    code("\n\t\t\t #res 4"); // TODO type check??	
        	  }
 				 
 	}
@@ -238,7 +238,7 @@ variable_part
 		
 	     // Generate Directives for global variables
 	     code("\n%s", $3);
-	     code("\n\t\t\t #res 2"); // TODO type check??		
+	     code("\n\t\t\t #res 4"); // TODO type check??		
           }
 		
 	}
@@ -395,7 +395,8 @@ num_exp
 	gen_mov_code($1,$$);
 
 	code("\t;EXPRETION");
-	code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1));
+        code("\n\t\t\t%s\t\t", get_arop_stmt_adv($$,$2,t1));
+	//code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1)); its for the register, which is always .w
 		       
 	
 	print_symbol($$);
@@ -523,7 +524,7 @@ function_call
           err("wrong number of arguments");
         code("\n\t\t\tCALL\t%s", get_name(fcall_idx));
         if($4 > 0)
-	  code("\n\t\t\tSUB \tsp, %d", $4 * 2);
+	  code("\n\t\t\tADD.w \tsp, %d", $4 * 4);
         set_type(FUN_REG, get_type(fcall_idx));
         $$ = FUN_REG;
       }

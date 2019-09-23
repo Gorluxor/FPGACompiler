@@ -5,5 +5,5 @@ make
 echo Compiling simple$VAL.mc
 ./micko < simple$VAL.mc
 ./customasm -f binary -i instruction-set.txt -o output.bin output.asm 
-java -jar FPGAEmulator.jar
+java -jar FPGAEmulator32.jar
 

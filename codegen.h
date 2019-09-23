@@ -35,6 +35,9 @@ void gen_mov_code(int input_index, int output_index);
 
 //vraca string aritmeticke naredbe
 char* get_arop_stmt(int arop, int type);
+char* get_arop_stmt_adv(int index, int arop, int type);
+
+
 //vraca operaciju uslovnog skoka
 char* get_jump_stmt(int jump, bool opp);
 //vraca indeks u nizu stringova naredbi skokova

@@ -10,7 +10,7 @@ int free_reg_num = 0;
 char invalid_value[] = "???";
 bool reg_taken[LAST_WORKING_REG] = {0};
 // REGISTERS
-
+char str[10];
 
 typedef struct item {
         int value;
@@ -117,11 +117,11 @@ void print_symbol(int index) {
   if (index > -1) {
     if (get_kind(index) == VAR) // -n*4(%14)
       //code("-%d(%%14)", get_atr1(index) * 4);
-      code("[r7 + %d]", get_atr1(index) * 2 - 2); // Can't be 4 (as in 32bit)   
+      code("[r13 - %d]", get_atr1(index) * 4);  
     else
     if (get_kind(index) == PAR) // m*4(%14)
       //code("%d(%%14)", 4 + get_atr1(index) *4);
-      code("[r7 - %d]", 4 + get_atr1(index) * 2); // diff char types TODO, changed to 4 from 2
+      code("[r13 + %d]", 4 + get_atr1(index) * 4); 
     else
     if (get_kind(index) == LIT)
       code("%s", get_name(index));
@@ -134,45 +134,45 @@ void print_symbol_address(int index, int reg) {
   if (index > -1) {
     code("\n");
     if (get_kind(index) == VAR) { // -n*4(%14)
-      int val = get_atr1(index) * 2 - 2;
-      code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
-      //code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
-    } else {
-      if (get_kind(index) == PAR) // m*4(%14)
-      {
-        int val = 4 + get_atr1(index) * 2;
-        code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
-        code("\t\t\tADD\tr%d,%d", reg, val);
-        //code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
-      } else {
-        if (get_kind(index) == LIT)
-          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-        else //function, reg
-          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
-      }
-    }
-  }
-}
-
-void print_symbol_value(int index, int reg) {
-  if (index > -1) {
-    if (get_kind(index) == VAR) { // -n*4(%14)
-      int val = get_atr1(index) * 4 - 4;
-      code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
-      code("\t\t\tADD\tr%d,%d", reg, val);
+      int val = get_atr1(index) * 4;
+      code("\t\t\tMOV.w\tr%d,r13\t;POINTER", reg);
       //code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
     } else {
       if (get_kind(index) == PAR) // m*4(%14)
       {
         int val = 4 + get_atr1(index) * 4;
-        code("\t\t\tMOV\tr%d,r7\t;POINTER", reg);
-        code("\t\t\tADD\tr%d,%d", reg, val);
+        code("\t\t\tMOV.w\tr%d,r13\t;POINTER", reg);
+        code("\t\t\tADD.w\tr%d,%d", reg, val);
         //code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
       } else {
         if (get_kind(index) == LIT)
-          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+          code("\t\t\tMOV.w\tr%d,%s", reg, get_name(index));
         else //function, reg
-          code("\t\t\tMOV\tr%d,%s", reg, get_name(index));
+          code("\t\t\tMOV.w\tr%d,%s", reg, get_name(index));
+      }
+    }
+  }
+}
+//Deprecated
+void print_symbol_value(int index, int reg) {
+  if (index > -1) {
+    if (get_kind(index) == VAR) { // -n*4(%14)
+      int val = get_atr1(index) * 4;
+      code("\t\t\tMOV.w\tr%d,r13\t;POINTER", reg);
+      code("\t\t\tADD.w\tr%d,%d", reg, val);
+      //code("[r7 + %d]",  get_atr1(index) * 4 - 4); // changed from 2 - 2   
+    } else {
+      if (get_kind(index) == PAR) // m*4(%14)
+      {
+        int val = 4 + get_atr1(index) * 4;
+        code("\t\t\tMOV.w\tr%d,r13\t;POINTER", reg);
+        code("\t\t\tADD.w\tr%d,%d", reg, val);
+        //code("[r7 - %d]", 4 +  get_atr1(index) *4); //  changed to 4 from 2
+      } else {
+        if (get_kind(index) == LIT)
+          code("\t\t\tMOV.w\tr%d,%s", reg, get_name(index));
+        else //function, reg
+          code("\t\t\tMOV.w\tr%d,%s", reg, get_name(index));
       }
     }
   }
@@ -182,11 +182,18 @@ void print_symbol_value(int index, int reg) {
 // OTHER
 
 void gen_cmp_internal(int op1_index, int op2_index) {
-  if (get_type(op1_index) == INT || get_type(op2_index) == INT)
-    //warn("Compare generated for INT even though one of them is BYTE type")
-    code("\n\t\t\tCMP \t"); // IF ONE OF THEM IS INT, check as INT
-  else
-    code("\n\t\t\tCMP.b \t");
+  if (op1_index <= LAST_WORKING_REG)
+     code("\n\t\t\tCMP.w \t");  
+  else 
+    {
+    if (get_type(op1_index) == WORD || get_type(op2_index) == WORD)
+        code("\n\t\t\tCMP.w \t");
+    else if (get_type(op1_index) == INT || get_type(op2_index) == INT)
+        code("\n\t\t\tCMP \t");
+    else 
+        code("\n\t\t\tCMP.b \t");
+    }
+ 
   print_symbol(op1_index);
   code(",");
   print_symbol(op2_index);
@@ -211,44 +218,42 @@ void gen_mov_code(int input_index, int output_index) {
   int t2 = get_kind(output_index);
   set_pok(output_index, get_pok(input_index)); // for exp pointer
   if (t2 & REG && (t1 & (REG | LIT))) { // normal MOV
-    code("\n\t\t\tMOV \t\t");
+    code("\n\t\t\tMOV.w \t\t");
     print_symbol(output_index);
     code(",");
     print_symbol(input_index);
   } else if ((t2 & (VAR | PAR | GLB)) && (t1 & REG)) {
-    if (get_type(input_index) == BYTE)
-      code("\n\t\t\tST.b \t\t");
-    else
-      code("\n\t\t\tST \t\t");
+    code("\n\t\t\tST.w \t\t");
+
     print_symbol(output_index);
     code(",");
     print_symbol(input_index);
   } else if ((t2 & (VAR | PAR)) && (t1 & LIT)) { // Intermediate step because LIT can't be used in ST
 
     int temp_reg = take_reg();
-    code("\n\t\t\tMOV \t\t");
+    code("\n\t\t\tMOV.w \t\t");
     print_symbol(temp_reg);
     code(",");
     print_symbol(input_index);
 
     if (get_type(output_index) == BYTE)
       code("\n\t\t\tST.b \t\t");
-    else
+    else if (get_type(output_index) == BYTE)
       code("\n\t\t\tST \t\t");
+    else 
+      code("\n\t\t\tST.w \t\t");
     print_symbol(output_index);
     code(",");
     print_symbol(temp_reg);
     free_reg(temp_reg);
   } else if ((t1 & (VAR | PAR)) && (t2 & REG)) {
-    if (get_type(input_index) == BYTE)
-      code("\n\t\t\tLD.b \t\t");
-    else
-      code("\n\t\t\tLD \t\t");
+    code("\n\t\t\t LD.w \t\t");
+  
     print_symbol(output_index);
     code(",");
     print_symbol(input_index);
   } else {
-    code("\n\t\t\tMOV \t");
+    code("\n\t\t\tMOV.w \t");
     print_symbol(output_index);
     code(",");
     print_symbol(input_index);
@@ -279,9 +284,24 @@ void gen_mov(int input_index, int output_index) {
   free_if_reg(input_index);
 }
 
+char* get_arop_stmt_adv(int index, int arop, int type){
+   if ((type < INT) || (type > WORD) || (arop < 0) || (arop >= AROP_NUMBER))
+    return invalid_value;
+   else 
+     { printf("IND:%d,AROP:%d,T:%d", index, arop, type);
+       if (index <= LAST_WORKING_REG){
+         
+         strcpy(str,arithmetic_operators[arop]);
+         strcat(str,".w");
+        return str;
+       } else 
+         return arithmetic_operators[arop + (type - 1) * AROP_NUMBER];
+     }
+}
 
+//Deprecated
 char* get_arop_stmt(int arop, int type) {
-  if ((type < INT) || (type > BYTE) || (arop < 0) || (arop >= AROP_NUMBER))
+  if ((type < INT) || (type > WORD) || (arop < 0) || (arop >= AROP_NUMBER))
     return invalid_value;
   else
     return arithmetic_operators[arop + (type - 1) * AROP_NUMBER];
@@ -303,23 +323,25 @@ char* get_jump_stmt(int jump_idx, bool opp) {
 
 void gen_inc(int num, int idx) {
   //TODO special case for GLB
-  if (get_type(idx) == INT) {
+  code("\n\t\t\tINC.s \t");
+  /*if (get_type(idx) == INT) {
     code("\n\t\tINC \t");
   } else if (get_type(idx) == BYTE) {
     code("\n\t\tINC.b\t");
   } else {
-    code("\n\t\tINC \t");
-  }
+    code("\n\t\tINC.w \t");
+  }*/
   print_symbol(idx);
 }
 
 void gen_dec(int num, int idx) {
-  if (get_type(idx) == INT) {
+  code("\n\t\t\tDEC.w \t");
+  /*if (get_type(idx) == INT) {
     code("\n\t\t\tDEC \t");
   } else if (get_type(idx) == BYTE) {
     code("\n\t\t\tDEC.b\t");
   } else if (get_type(idx) == POINTER) {
-    code("\n\t\t\tDEC \t"); //TODO pointer
-  }
+    code("\n\t\t\tDEC.w \t"); //TODO pointer
+  }*/
   print_symbol(idx);
 }

@@ -3,8 +3,8 @@ int main(){
 
 	asm{
 		PUSH r1
-		MOV r1, 5
-		ST [r7 + 0], r1
+		MOV.w r1, 5
+		ST.w [r7 + 0], r1
 		POP r1
 	}
 	

@@ -217,7 +217,7 @@ void init_symtab(void) {
 	
   int i = 0;
   char s[4];
-  for(i = 0; i < 7; i++) { // MAX NUMBER OF REGISTERS r0-r6
+  for(i = 0; i < FUN_REG + 1; i++) { // MAX NUMBER OF REGISTERS r0-r6
     sprintf(s, "r%d", i);
     insert_symbol(strdup(s), REG, NO_TYPE, NO_ATR,no_type_array, NO_ATR);
   }
