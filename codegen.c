@@ -3,7 +3,7 @@
 #include <string.h>
 #include "codegen.h"
 #include "symtab.h"
-
+#include "ctype.h"
 
 extern FILE *output;
 int free_reg_num = 0;
@@ -91,6 +91,7 @@ void free_reg(int a) {
 	reg_taken[a] = 0;
 	--free_reg_num;
 	set_type(a, NO_TYPE);
+    set_ispok(a, 0);
      }	
    }
 }
@@ -216,7 +217,7 @@ void gen_cmp(int op1_index, int op2_index) {
 void gen_mov_code(int input_index, int output_index) {
   int t1 = get_kind(input_index);
   int t2 = get_kind(output_index);
-  set_pok(output_index, get_pok(input_index)); // for exp pointer
+  set_ispok(output_index, get_ispok(input_index)); // for exp pointer
   if (t2 & REG && (t1 & (REG | LIT))) { // normal MOV
     code("\n\t\t\tMOV.w \t\t");
     print_symbol(output_index);
@@ -252,7 +253,25 @@ void gen_mov_code(int input_index, int output_index) {
     print_symbol(output_index);
     code(",");
     print_symbol(input_index);
-  } else {
+  } else if ((t1 & (VAR | PAR)) && (t2 & (VAR|PAR))){
+	int temp_reg = take_reg();
+    code("\n\t\t\tLD.w \t\t");
+    print_symbol(temp_reg);
+    code(",");
+    print_symbol(input_index);
+
+    if (get_type(output_index) == BYTE)
+      code("\n\t\t\tST.b \t\t");
+    else if (get_type(output_index) == SHORT)
+      code("\n\t\t\tST.s \t\t");
+    else 
+      code("\n\t\t\tST.w \t\t");
+    print_symbol(output_index);
+    code(",");
+    print_symbol(temp_reg);
+    free_reg(temp_reg);
+	}else {
+	printf("k1:%d,k2:%d",t1,t2);
     code("\n\t\t\tMOV.w \t");
     print_symbol(output_index);
     code(",");
@@ -286,10 +305,11 @@ void gen_mov(int input_index, int output_index) {
 
 //Deprecated
 char* get_arop_stmt_adv(int index, int arop, int type){
-   if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
-    return invalid_value;
-   else 
-     { printf("IND:%d,AROP:%d,T:%d", index, arop, type);
+   if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER)){
+	printf("Deprecated");    
+	return invalid_value;
+   }else 
+     { err("IND:%d,AROP:%d,T:%d", index, arop, type);
        if (index <= LAST_WORKING_REG){
          
          strcpy(str,arithmetic_operators[arop]);
@@ -300,7 +320,7 @@ char* get_arop_stmt_adv(int index, int arop, int type){
      }
 }
 
-int get_real_type(int type){
+/*int get_real_type(int type){
   int ltype;// INT 1, BYTE 2, SHORT 4
   if (type == BYTE)  ltype = 2; 
   else if (type == SHORT) ltype = 3; 
@@ -308,25 +328,29 @@ int get_real_type(int type){
   else if (type == VOID) ltype = 4;
   else ltype = 0; 	
  return ltype;
-}
+}*/
 
 
 char* get_arop_stmt(int arop, int type) {
-  type = get_real_type(type);
-  if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER))
-    return invalid_value;
-  else
+  //type = get_real_type(type);
+  if ((type < INT) || (type > SHORT) || (arop < 0) || (arop >= AROP_NUMBER)){
+	err("Arop,STMT:%d,%d",arop,type);
+	print_symtab();    
+	return invalid_value;
+  }else
     return arithmetic_operators[arop + (type - 1) * AROP_NUMBER];
 }
 
 int get_jump_idx(int relop, bool type) {
-  return relop + ((get_real_type(type) - 1) * RELOP_NUMBER);
+  return relop + ((type - 1) * RELOP_NUMBER);
 }
 
 char* get_jump_stmt(int jump_idx, bool opp) {
-  if ((jump_idx < 0) || (jump_idx >= RELOP_NUMBER * 2))
-    return invalid_value;
-  else
+  if ((jump_idx < 0) || (jump_idx >= RELOP_NUMBER * 3)){
+	err("Invalid jump %d, %d", jump_idx, opp);
+	print_symtab();    
+	return invalid_value;
+  }else
     if(opp)
       return opp_jumps[jump_idx];
     else        
@@ -352,8 +376,14 @@ void gen_dec(int num, int idx) {
     code("\n\t\t\tDEC.b \t");
   } else if (get_type(idx) == SHORT) {
     code("\n\t\t\tDEC.s\t");
-  } else if (get_type(idx) == POINTER) {
+  } else {
     code("\n\t\t\tDEC.w \t"); //TODO pointer
   }
   print_symbol(idx);
 }
+
+
+
+
+
+

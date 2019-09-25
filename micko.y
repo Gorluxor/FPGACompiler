@@ -27,6 +27,7 @@
   int arg_counter = 0;
   int par_counter = 0;
   extern unsigned no_type_array[];
+  extern int first_line;
 %}
 
 %union {
@@ -101,7 +102,7 @@ program
   ;
 
 asm
-  : _ASM {code("\t%s",$1);} 
+  : _ASM { if (first_line) code("\n\t%s",$1); else code("\t%s", $1); first_line = 0;} 
   ;
 
 function_list
@@ -113,7 +114,7 @@ function_list
 function
   : type _ID
       {
-	global = 0; // its inside the function 
+	    global = 0; // its inside the function 
         fun_idx = lookup_symbol($2, FUN);
         if(fun_idx == -1)
           fun_idx = insert_symbol($2, FUN, $1, NO_ATR, no_type_array, pointerType); // pointerType for fun
@@ -146,13 +147,13 @@ type
   : _TYPE
         { 
           typeOf = $1;
-	  pointerType = 0;
-	  $$ = $1;
+	  	  pointerType = NO_ATR; // 0
+	      $$ = $1;
         }
   | _TYPE _ASTERIKS 
 	{
-	  typeOf = POINTER;
-	  pointerType = $1;
+	  typeOf = $1;
+	  pointerType = 1;
 	  $$ = typeOf;
 	}
   ;
@@ -168,7 +169,7 @@ parameter
 
   : type _ID
       {       
-        insert_symbol($2, PAR, $1, 1, no_type_array, NO_ATR);
+        insert_symbol($2, PAR, $1, 1, no_type_array, pointerType);
         set_atr2(fun_idx, par_counter, $1);
         $$ = 1;
       }
@@ -197,24 +198,17 @@ variable_part
         {
           if (global ==  0){
 	    if(lookup_symbol($1, VAR|PAR) == -1){
-	      if (typeOf == POINTER)
-		insert_symbol($1, VAR, typeOf, ++var_num, no_type_array, pointerType);
-	      else					
-		insert_symbol($1, VAR, typeOf, ++var_num, no_type_array, NO_ATR);
+		   insert_symbol($1, VAR, typeOf, ++var_num, no_type_array, pointerType);
 	    }else 
 		err("redefinition of '%s'", $1);		
           } else {
-	    if (lookup_symbol($1, GLB) == -1){
-		if (typeOf == POINTER)
+	    if (lookup_symbol($1, GLB) == -1)
 		  insert_symbol($1, GLB, typeOf, NO_ATR, no_type_array, pointerType);
-		else 
-		  insert_symbol($1, GLB, typeOf, NO_ATR, no_type_array, NO_ATR);
-	    }
 		else
 		  err("Redefinition of global varibale '%s'", $1);
-        	// Generate Directives for global variables
-	    code("\n%s", $1);
-	    code("\n\t\t\t #res 4"); // TODO type check??	
+
+	      code("\n%s", $1);
+	      code("\n\t\t\t #res 4");
        	  }
 				 
 	}
@@ -222,24 +216,17 @@ variable_part
 	{
 	  if (global == 0){
 	    if(lookup_symbol($3, VAR|PAR) == -1){
-		if (typeOf == POINTER)
-		  insert_symbol($3, VAR, typeOf, ++var_num, no_type_array, pointerType);
-		else					
-		  insert_symbol($3, VAR, typeOf, ++var_num, no_type_array, NO_ATR);        	  
+		  insert_symbol($3, VAR, typeOf, ++var_num, no_type_array, pointerType); 	  
 		}else 
 		  err("redefinition of '%s'", $3);
-		} else {
+		} else 
+		{
 		  if (lookup_symbol($3, GLB) == -1){
-		    if (typeOf == POINTER)
 		      insert_symbol($3, GLB, typeOf, NO_ATR, no_type_array, pointerType);
-		    else 
-		      insert_symbol($3, GLB, typeOf, NO_ATR, no_type_array, NO_ATR);
 		  }else
 		      err("Redefinition of global varibale '%s'", $3);
-		
-	     // Generate Directives for global variables
-	     code("\n%s", $3);
-	     code("\n\t\t\t #res 4"); // TODO type check??		
+	       code("\n%s", $3);
+	       code("\n\t\t\t #res 4"); 		
           }
 		
 	}
@@ -359,14 +346,14 @@ left_part_assignment
 		err("invalid lvalue '%s' in assignment", $1);
 	  else
           {
-	    if (get_type(idx) != POINTER)
-	      if (get_type($3) == POINTER && get_type(idx) == INT)
+	    if (!get_ispok(idx))
+	      if (get_ispok($3) == 1 && get_type(idx) == INT)
 	        warn("Allocating Address into a integer variable!");
 	    else				
 	      if (get_type(idx) != get_type($3))
 	        err("incompatible types in assignment, %d : %d", get_type(idx), get_type($3));
 	  }
-    	  gen_mov($3,idx);
+      gen_mov($3,idx);
 	  code("\t\t;ASSIGN");
 	}
 	;
@@ -380,25 +367,28 @@ num_exp
 
   | num_exp arop exp
   {
-    if (get_type($1) == POINTER || get_type($3) == POINTER){
+    /*if (get_type($1) == POINTER || get_type($3) == POINTER){
       if (get_type($1) == POINTER) 
 	set_type($1, INT);
       if (get_type($3) == POINTER)
-	set_type($3, INT);			
+	set_type($3, INT); 			
       //warn("aritmehic operations with address??");					
       } else if(get_type($1) != get_type($3))
-      	  err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));
-        int t1 = get_type($1);
+      	  err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));*/
+	if (get_type($1) != get_type($3))
+		err("invalid operands: arithmetic operation, %d : %d", get_type($1), get_type($3));
+	int t1 = get_type($1);
 	
 	$$ = take_reg();
-        set_type($$, t1);
-	set_pok($$, get_pok($3)); // for pointer
-	gen_mov_code($1,$$);
+    set_type($$, t1);
+	//set_pok($$, get_pok($3)); // for pointer
+	set_ispok($$, get_ispok($3) || get_ispok($1));
+    gen_mov_code($1,$$);
 
 	code("\t;EXPRESSION");
       //  code("\n\t\t\t%s\t\t", get_arop_stmt_adv($$,$2,t1));
 	code("\n\t\t\t%s\t\t", get_arop_stmt($2, t1)); //its for the register, which is always .w
-		       
+	//err("NUMEXP:%d(%d), AROP:%d, EXP:%d(%d)",$1,get_type($1),$2,$3,get_type($3));	       
 	
 	print_symbol($$);
 	code(",");
@@ -452,49 +442,71 @@ exp
 
           post_op($$, FALSE);
 	}
-	| _ASTERIKS exp 
+	| _ASTERIKS _ID 
         {
-	  int idx = $2;
+	  int idx = lookup_symbol($2, (VAR|PAR|GLB));
 	  if (idx == -1)
-	    err("Can't find Expression in symbol table");
-	  if (get_pok($2) == 0)
+	    err("Dereferencing invalid type or not declared");
+	  if (get_ispok(idx) == 0)
 	    err("Trying to dereference something that isn't a pointer");
-	  if (get_pok($2) == 0)
-	    err("Error while trying to find what the variable is pointing at");
+	
 	  //printf("Before move! %d",idx);
-	  print_symtab();	
+	  //print_symtab();	
 	
 	  $$ = take_reg();
 	
 	  //printf("\n\t\tTHISTYPE:%d for var:%d\n\n reg:%d", get_type(get_pok(idx)),idx,$$);
 	  gen_mov(idx,$$);
 	  //printf("\n\t\tTHISTYPE:%d\n\n", get_type(get_pok(idx)));
-	  set_type($$,get_type(get_pok(idx)));
-	  if (get_type(get_pok(idx)) == BYTE){
+	  set_type($$,get_type(idx));
+      set_ispok($$,0);
+	  if (get_kind(idx) == GLB)
+		code("\n\t\t\tMOV.w\t r%d,%s", $$,$2);
+	  else if (get_type(idx) == BYTE){
 	    code("\n\t\t\tLD.b\t r%d,[r%d]", $$,$$);
-		
+	  } else if (get_type(idx) == SHORT) {
+	    code("\n\t\t\tLD.s\t r%d,[r%d]", $$,$$);
 	  } else {
-	    code("\n\t\t\tLD\t r%d,[r%d]", $$,$$); // for pointer as well
-		
+        code("\n\t\t\tLD.w\t r%d,[r%d]", $$, $$);
 	  }
 	  print_symtab();	
 	}
 
-	| _AMP exp {
-	  int idx = $2;
+	| _AMP _ID {
+	  int idx = lookup_symbol($2, (VAR|PAR|GLB));
 	  if (idx == -1){
-	    err("Can't find Expression in symbol table");
-	  }
-	  if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
-	    err("Referencing invalid type");
-	  }
+	    err("Referencing invalid type or not declared");
+	  }else
+      if (get_ispok(idx) != 0) 
+		err("Can't reference something that is already a pointer");
+	  //if (lookup_symbol(get_name(idx), (VAR|PAR|GLB)) == -1){
+	  //  err("Referencing invalid type");
+	  
 
 	  $$ = take_reg();
-	  set_pok($$, idx);
-	  set_type($$,POINTER);
-	  print_symtab();
+	  //set_pok($$, idx);
+	  
+	  if (get_kind(idx) == GLB)
+	  	code("\n\t\t\tMOV.w r%d,%s;POINTER", $$, $2);
+	  else {
+	    code("\n\t\t\tMOV.w r%d,r13;POINTER",$$);
+		int value;
+		if (get_kind(idx) == VAR){
+			
+			value = 4 * get_atr1(idx);
+			code("\n\t\t\tSUB.w r%d, %d", $$, value);		
+		}else{  // PAR
+			
+			value = 4 * get_atr1(idx) + 4;
+			code("\n\t\t\tADD.w r%d, %d", $$, value);		
+		}
+	  }
+	  set_ispok($$,1);
+	  //print_symtab();
+
+      //code();
 	  //printf("\n\n\t%d:%d\n\n",$$,idx);
-	  print_symbol_address(idx, $$);
+	  //print_symbol_address(idx, $$);
 		
 	}
   ;
@@ -545,9 +557,9 @@ argument
       if (get_atr2(fcall_idx,arg_counter) != get_type($1))
         err("incompatible type for argument");      
       //if(get_atr2(fcall_idx) != get_type($1))
-      arg_counter++;
-      free_if_reg($1);
-      if (get_type($1) != POINTER){
+      
+    
+	  if (get_kind($1) == LIT || get_kind($1) == REG){
         code("\n\t\t\tPUSH\t");
         print_symbol($1);
       }else { // check
@@ -556,7 +568,7 @@ argument
         code("\n\t\t\tPUSH\t");
         print_symbol(a);
         free_if_reg(a);
-      }
+      } 
       $$ = 1;
     }
   ;
@@ -623,7 +635,7 @@ if_part
 rel_exp
   : num_exp _RELOP num_exp
       {
-	if (get_type($1) != POINTER && get_type($3) != POINTER)
+        //if (get_type($1) != POINTER && get_type($3) != POINTER)
           if(get_type($1) != get_type($3))
     	   err("invalid operands: relational operator");
         $$ = $2 + ((get_type($1) - 1) * RELOP_NUMBER);

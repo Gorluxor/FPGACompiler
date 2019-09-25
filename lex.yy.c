@@ -566,7 +566,7 @@ char *yytext;
    #include <stdlib.h>
    #include <string.h>
    extern YYSTYPE yylval;
-
+   extern int first_line;
 // int asm_count = 0;
 
 #line 573 "lex.yy.c"
@@ -865,7 +865,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 19 "micko.l"
-{  BEGIN(ASM); /*freopen("output.bin", "a", stdout);*/ }
+{  BEGIN(ASM); first_line = 1; /*freopen("output.bin", "a", stdout);*/ }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */

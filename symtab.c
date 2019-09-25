@@ -31,7 +31,7 @@ int get_last_element(void) {
 // i vraca indeks ubacenog elementa u tabeli simbola 
 // ili -1 u slucaju da nema slobodnog elementa u tabeli.
 int insert_symbol(char *name, unsigned kind, unsigned type, 
-                  unsigned atr1, unsigned atr2[], unsigned pok){
+                  unsigned atr1, unsigned atr2[], unsigned ispok){
   int index = get_next_empty_element();
   symbol_table[index].name = name;
   symbol_table[index].kind = kind;
@@ -39,7 +39,7 @@ int insert_symbol(char *name, unsigned kind, unsigned type,
   symbol_table[index].atr1 = atr1;
   for (int i = 0; i < 10; i++)
     symbol_table[index].atr2[i] =  atr2[i];
-  symbol_table[index].pok = pok;
+  symbol_table[index].ispok = ispok;
   return index;
 }
 
@@ -60,6 +60,9 @@ int insert_literal(char *str, unsigned type) {
   idx = insert_symbol(str, LIT, type, NO_ATR, no_type_array, NO_ATR);
   return idx;
 }
+
+
+
 
 // Vraca indeks pronadjenog simbola ili vraca -1.
 int lookup_symbol(char *name, unsigned kind) {
@@ -101,8 +104,7 @@ void set_type(int index, unsigned type) {
 
 unsigned get_type(int index) {
   if(index > -1 && index < SYMBOL_TABLE_LENGTH){   
-
-	 return symbol_table[index].type % 2 == 0 ? symbol_table[index].type : symbol_table[index].type - 1;
+	 return symbol_table[index].type;
   }
   return NO_TYPE;
 }
@@ -130,14 +132,14 @@ unsigned get_atr2(int index, int index2) {
   return NO_ATR;
 }
 
-void set_pok(int index, unsigned pok) {
+void set_ispok(int index, unsigned ispok) {
   if(index > -1 && index < SYMBOL_TABLE_LENGTH)
-    symbol_table[index].pok = pok;
+    symbol_table[index].ispok = ispok;
 }
 
-unsigned get_pok(int index) {
+unsigned get_ispok(int index) {
   if(index > -1 && index < SYMBOL_TABLE_LENGTH)
-    return symbol_table[index].pok;
+    return symbol_table[index].ispok;
   return NO_ATR;
 }
 
@@ -161,7 +163,7 @@ void clear_symbols(unsigned begin_index) {
 	for (int j = 0; j < 10; j++)
 	    symbol_table[i].atr2[j] = NO_TYPE ;
 		
-	symbol_table[i].pok = NO_ATR; // maybe something else?
+	symbol_table[i].ispok = NO_ATR; 
   }
   	
   first_empty = begin_index;
@@ -179,7 +181,7 @@ void print_symtab(void) {
     "NONE", "REG", "LIT", "FUN", "VAR", "PAR", "GLB" };
   int i,j;
   printf("\n\nSYMBOL TABLE\n");
-  printf("\n       name           kind   type  atr1   pok   atr2");
+  printf("\n       name           kind   type  atr1   ispok   atr2");
   printf("\n-- ---------------- -------- ----  -----  -----  ----------");
   for(i = 0; i < first_empty; i++) {
     printf("\n%2d %-19s %-4s %4d  %4d  %4d  %4d,%d,%d,%d,%d,%d,%d,%d,%d,%d", i, 
@@ -187,7 +189,7 @@ void print_symtab(void) {
     symbol_kinds[(int)(logarithm2(symbol_table[i].kind))], 
     symbol_table[i].type, 
     symbol_table[i].atr1, 
-    symbol_table[i].pok,
+    symbol_table[i].ispok,
 	symbol_table[i].atr2[0],
 	symbol_table[i].atr2[1],
 	symbol_table[i].atr2[2],

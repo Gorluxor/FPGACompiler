@@ -8,7 +8,7 @@
    #include <stdlib.h>
    #include <string.h>
    extern YYSTYPE yylval;
-
+   extern int first_line;
 // int asm_count = 0;
 %}
 
@@ -16,7 +16,7 @@
 
 %%
 
-"asm{"               {  BEGIN(ASM); /*freopen("output.bin", "a", stdout);*/ }
+"asm{"               {  BEGIN(ASM); first_line = 1; /*freopen("output.bin", "a", stdout);*/ }
 
 <ASM>^[^}]*          { yylval.s = strdup(yytext); return _ASM; }
 

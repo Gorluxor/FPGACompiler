@@ -4,7 +4,7 @@ int main(){
 	int c;
 	int* b;
 	a = 4;
-
+	b = 111;
 
 	b = &a;
 	c = *b * 3;
