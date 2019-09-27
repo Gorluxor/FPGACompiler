@@ -6,12 +6,14 @@
 nesto:
 			PUSH	r13
 			MOV.w 	r13,sp
-			SUB.w		sp, 4
+			SUB.w		sp, 8
 .nesto_body:
+			MOV.w 		r0,12
+			ST.w 		[r13 - 8],r0		;ASSIGN
 			 LD.w 		r0,[r13 + 8]	;EXPRESSION
 			ADD.w		r0,[r13 + 12]
 			ST.w 		[r13 + 8],r0		;ASSIGN
-		MOV.w	r0,11
+		LD.w 		r0,[r13 - 8]
 			 LD.w 		r1,[r13 + 8]
 			ST.w 		[r1],r0		;POINTER ASSIGN
 			 LD.w 		r0,[r13 + 8]

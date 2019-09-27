@@ -1,10 +1,11 @@
-// returns 11
-// demonstrates assignment with literal
+// returns 12
+// demonstrates assignment with variable
 int nesto(int *a, int b){
 	int d;
     int rez;
-    rez = 11;		
-    a = a + b;	
+    rez = 12;		
+    a = a + b;
+		
 	*a = rez;	
 	d = *a;	// dereference memory 1000
 	return d;

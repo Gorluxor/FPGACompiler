@@ -288,17 +288,17 @@ void gen_p_move(int input_index, int output_index){
   //set_ispok(output_index, get_ispok(input_index));
   int temp_reg = take_reg();
   if (t1 & LIT){
-    code("\n\t\tMOV.w\t");
+    code("\n\t\tMOV.w \t");
 	print_symbol(temp_reg);
 	code(",");
 	print_symbol(input_index);
   }else if (t1 & (GLB|PAR|VAR)) {
 	if (get_type(output_index) == BYTE)
-      code("\n\t\tLD.b");
+      code("\n\t\tLD.b \t\t");
     else if (get_type(output_index) == SHORT)
-      code("\n\t\tLD.s");
+      code("\n\t\tLD.s \t\t");
     else 
-      code("\n\t\tLD.w");
+      code("\n\t\tLD.w \t\t");
 
 
 
