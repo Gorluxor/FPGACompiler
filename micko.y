@@ -159,7 +159,7 @@ type
   ;
 
 parameter_list
-	: { $$ = 0;}
+	: {  $$ = 0;}
 	| parameter { par_counter++; $$ = $1; }
 	| parameter_list _COMMA parameter { par_counter = $1 + $3; $$ = $1 + $3;}
 	;
@@ -169,7 +169,7 @@ parameter
 
   : type _ID
       {       
-        insert_symbol($2, PAR, $1, 1, no_type_array, pointerType);
+        insert_symbol($2, PAR, $1, par_counter, no_type_array, pointerType);
         set_atr2(fun_idx, par_counter, $1);
         $$ = 1;
       }

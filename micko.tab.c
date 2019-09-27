@@ -1460,7 +1460,7 @@ yyreduce:
 
   case 13:
 #line 162 "micko.y" /* yacc.c:1646  */
-    { (yyval.i) = 0;}
+    {  (yyval.i) = 0;}
 #line 1465 "micko.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1479,7 +1479,7 @@ yyreduce:
   case 16:
 #line 171 "micko.y" /* yacc.c:1646  */
     {       
-        insert_symbol((yyvsp[0].s), PAR, (yyvsp[-1].i), 1, no_type_array, pointerType);
+        insert_symbol((yyvsp[0].s), PAR, (yyvsp[-1].i), par_counter, no_type_array, pointerType);
         set_atr2(fun_idx, par_counter, (yyvsp[-1].i));
         (yyval.i) = 1;
       }
