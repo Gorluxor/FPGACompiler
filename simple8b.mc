@@ -1,10 +1,10 @@
-// returns 9
+// returns 11
 int nesto(int *a, int b){
 	int d;		
     a = a + b;
 	asm{
-		MOV.w	 r7, 9
-		ST.w	 [r8 + 1000], r7	; put 9 in memory 100	
+		MOV.w	 r7, 11
+		ST.w	 [r8 + 1000], r7	; put 11 in memory 100	
 	}	
 	d = *a;	// dereference memory 1000
 	return d;

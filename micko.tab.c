@@ -1466,20 +1466,20 @@ yyreduce:
 
   case 14:
 #line 163 "micko.y" /* yacc.c:1646  */
-    { par_counter++; (yyval.i) = (yyvsp[0].i); }
+    { (yyval.i) = (yyvsp[0].i); }
 #line 1471 "micko.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
 #line 164 "micko.y" /* yacc.c:1646  */
-    { par_counter = (yyvsp[-2].i) + (yyvsp[0].i); (yyval.i) = (yyvsp[-2].i) + (yyvsp[0].i);}
+    { (yyval.i) = (yyvsp[-2].i) + (yyvsp[0].i);}
 #line 1477 "micko.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
 #line 171 "micko.y" /* yacc.c:1646  */
     {       
-        insert_symbol((yyvsp[0].s), PAR, (yyvsp[-1].i), par_counter, no_type_array, pointerType);
+        insert_symbol((yyvsp[0].s), PAR, (yyvsp[-1].i), ++par_counter, no_type_array, pointerType);
         set_atr2(fun_idx, par_counter, (yyvsp[-1].i));
         (yyval.i) = 1;
       }
@@ -1900,7 +1900,7 @@ yyreduce:
 #line 555 "micko.y" /* yacc.c:1646  */
     { 
 
-      if (get_atr2(fcall_idx,arg_counter) != get_type((yyvsp[0].i)))
+      if (get_atr2(fcall_idx, ++arg_counter) != get_type((yyvsp[0].i)))
         err("incompatible type for argument");      
       //if(get_atr2(fcall_idx) != get_type($1))
       

@@ -123,12 +123,12 @@ unsigned get_atr1(int index) {
 void set_atr2(int index, int index2, unsigned type) {
   printf("T:%dIND:%dTYPE:%d\n", index, index2, type);
   if(index > -1 && index < SYMBOL_TABLE_LENGTH && index2 > -1 && index2 < 10)
-    symbol_table[index].atr2[index2] = type;
+    symbol_table[index].atr2[index2-1] = type;
 }
 
 unsigned get_atr2(int index, int index2) {
   if(index > -1 && index < SYMBOL_TABLE_LENGTH)
-    return symbol_table[index].atr2[index2];
+    return symbol_table[index].atr2[index2-1];
   return NO_ATR;
 }
 
