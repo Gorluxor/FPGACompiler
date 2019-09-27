@@ -8,7 +8,7 @@ nesto:
 			MOV.w 	r13,sp
 			SUB.w		sp, 8
 .nesto_body:
-			MOV.w 		r0,12
+			MOV.w 		r0,11
 			ST.w 		[r13 - 8],r0		;ASSIGN
 			 LD.w 		r0,[r13 + 8]	;EXPRESSION
 			ADD.w		r0,[r13 + 12]
