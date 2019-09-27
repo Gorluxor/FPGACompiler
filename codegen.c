@@ -236,7 +236,8 @@ void gen_mov_code(int input_index, int output_index) {
     print_symbol(temp_reg);
     code(",");
     print_symbol(input_index);
-
+	if (get_ispok(output_index) != 0)
+	  code("\n\t\t\tST.w \t\t");
     if (get_type(output_index) == BYTE)
       code("\n\t\t\tST.b \t\t");
     else if (get_type(output_index) == SHORT)
@@ -259,7 +260,8 @@ void gen_mov_code(int input_index, int output_index) {
     print_symbol(temp_reg);
     code(",");
     print_symbol(input_index);
-
+	if (get_ispok(output_index) != 0)
+	  code("\n\t\t\tST.w \t\t");
     if (get_type(output_index) == BYTE)
       code("\n\t\t\tST.b \t\t");
     else if (get_type(output_index) == SHORT)
@@ -314,7 +316,12 @@ void gen_p_move(int input_index, int output_index){
   // always *pok, thus memory, either PAR or VAR
   gen_mov_code(output_index,temp_reg2);
 
-  code("\n\t\t\tST.w \t\t");
+  if (get_type(output_index) == BYTE)
+      code("\n\t\t\tST.b \t\t");
+    else if (get_type(output_index) == SHORT)
+      code("\n\t\t\tST.s \t\t");
+    else 
+      code("\n\t\t\tST.w \t\t");
   code("[r%d]",temp_reg2);
   code(",");
   print_symbol(temp_reg);
