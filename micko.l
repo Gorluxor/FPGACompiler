@@ -13,7 +13,7 @@
 %}
 
 %x ASM
-
+%x MCOMMENT
 %%
 
 "asm{"               {  BEGIN(ASM); first_line = 1; /*freopen("output.bin", "a", stdout);*/ }
@@ -21,6 +21,7 @@
 <ASM>^[^}]*          { yylval.s = strdup(yytext); return _ASM; }
 
 <ASM>"}" 	     { BEGIN(INITIAL); }
+
 
 
 [ \t\n]+             { /* skip */ }

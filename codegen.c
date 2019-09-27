@@ -217,7 +217,7 @@ void gen_cmp(int op1_index, int op2_index) {
 void gen_mov_code(int input_index, int output_index) {
   int t1 = get_kind(input_index);
   int t2 = get_kind(output_index);
-  set_ispok(output_index, get_ispok(input_index)); // for exp pointer
+ // for exp pointer
   if (t2 & REG && (t1 & (REG | LIT))) { // normal MOV
     code("\n\t\t\tMOV.w \t\t");
     print_symbol(output_index);
@@ -283,9 +283,48 @@ void gen_mov_code(int input_index, int output_index) {
 
 void gen_p_move(int input_index, int output_index){
 	
+  int t1 = get_kind(input_index);
+  int t2 = get_kind(output_index);
+  //set_ispok(output_index, get_ispok(input_index));
+  int temp_reg = take_reg();
+  if (t1 & LIT){
+    code("\n\t\tMOV.w\t");
+	print_symbol(temp_reg);
+	code(",");
+	print_symbol(input_index);
+  }else if (t1 & (GLB|PAR|VAR)) {
+	if (get_type(output_index) == BYTE)
+      code("\n\t\tLD.b");
+    else if (get_type(output_index) == SHORT)
+      code("\n\t\tLD.s");
+    else 
+      code("\n\t\tLD.w");
 
 
 
+
+	print_symbol(temp_reg);
+    code(",");
+	print_symbol(input_index);  //TODO Check if GLB can be used in this way
+		
+  	
+	
+  }
+	int temp_reg2 = take_reg();
+  // always *pok, thus memory, either PAR or VAR
+  gen_mov_code(output_index,temp_reg2);
+
+  if (get_type(output_index) == BYTE)
+      code("\n\t\t\tST.b \t\t");
+    else if (get_type(output_index) == SHORT)
+      code("\n\t\t\tST.s \t\t");
+    else 
+      code("\n\t\t\tST.w \t\t");
+  code("[r%d]",temp_reg2);
+  code(",");
+  print_symbol(temp_reg);
+	free_if_reg(temp_reg);
+	free_if_reg(temp_reg2);
 }
 
 
@@ -298,8 +337,10 @@ void gen_mov(int input_index, int output_index) {
   gen_mov_code(input_index, output_index);
 
   //ako se smešta u registar, treba preneti tip 
-  if (output_index >= 0 && output_index <= LAST_WORKING_REG)
+  if (output_index >= 0 && output_index <= LAST_WORKING_REG){
     set_type(output_index, get_type(input_index));
+	 set_ispok(output_index, get_ispok(input_index)); 
+  }
   free_if_reg(input_index);
 }
 

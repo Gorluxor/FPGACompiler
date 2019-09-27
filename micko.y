@@ -168,7 +168,8 @@ parameter
   //    { $$ = 0; }
 
   : type _ID
-      {       
+      {      
+		printf("/nPointerType%d/n", pointerType); 
         insert_symbol($2, PAR, $1, ++par_counter, no_type_array, pointerType);
         set_atr2(fun_idx, par_counter, $1);
         $$ = 1;
@@ -356,8 +357,25 @@ left_part_assignment
       gen_mov($3,idx);
 	  code("\t\t;ASSIGN");
 	}
-	;
+	| _ASTERIKS _ID _ASSIGN num_exp 
+	{
+		int idx = lookup_symbol($2, (VAR|PAR|GLB));
+		if (idx == -1)
+			err("invalid lvalue '%s' in assignment", $2);
+		else 
+		{
 
+		if (get_ispok(idx) == 0)
+			err("Trying to assign as a pointer to a variable that isn't one");
+		else 
+			if (get_type(idx) != get_type($4))
+				err("incompatible types in assignment, %d : %d", get_type(idx), get_type($4));
+		
+		}
+		gen_p_move($4, idx);
+		code("\t\t;POINTER ASSIGN");
+	}
+	;
 arop
   : _AROP { $$ = $1;}
   | _ASTERIKS { $$ = MUL; }
